@@ -2,7 +2,7 @@ import hashlib
 import random
 
 
-class Data:
+class Data:             # this class stores registered user data
     def __init__(self):
         self.data = {}
         self.secret = self.gen_secret
