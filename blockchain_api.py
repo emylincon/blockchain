@@ -13,7 +13,7 @@ chain = BlockChain()          # initializing block chain
 store = Data()                # initializing user data
 
 
-def auth_required(f):
+def auth_required(f):           # user verification authentication
     @wraps(f)
     def decorated(*args, **kwargs):
         auth = request.authorization
@@ -32,15 +32,15 @@ def auth_required(f):
 class HomePage(Resource):
     @staticmethod
     def get():
-        return {'about': 'Welcome to Emeka\'s implementation of blockchain!'}
+        return {'about': 'Welcome to Emeka\'s implementation of blockchain! To Register use endpoint=> register/'}
 
 
-class Register(Resource):
+class Register(Resource):       # Registration resource
     @staticmethod
-    def post():
+    def post():          # user sends a json containing username & password -> {"user": "john", "pw": "pass"}
         try:
             reg_data = request.get_json()
-            if set(reg_data.keys()) == {'user', 'pw'}:
+            if set(reg_data.keys()) == {'user', 'pw'}:   # checks if format is followed
                 if store.add_item(**reg_data) == 1:
                     return json.dumps({'info': f'registration successful for {reg_data["user"]}'})
                 else:
@@ -66,14 +66,14 @@ class Read(Resource):
     @staticmethod
     @auth_required
     def get(text):
-        if text == 'all':
+        if text == 'all':           # reads all data in block chain
             return json.dumps(chain.read_all())
         else:
             try:
                 data = ast.literal_eval(text)
                 if type(data).__name__ == 'dict':
                     a = chain.read_block(**data)
-                    return json.dumps(a)
+                    return json.dumps(a)         # reads a particular block with nonce id or hash
                 else:
                     return {'error': 'wrong format -> Example -> {nonce: 1} or {hash_: 127hdwu861eh}'}
             except Exception as e:
