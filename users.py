@@ -1,12 +1,13 @@
 import hashlib
 import random
+import config
 
 
 class Data:             # this class stores registered user data
     def __init__(self):
         self.data = {}
         self.secret = self.gen_secret
-        self.add_item(user='admin', pw='admin')        # adds admin user for testing
+        self.add_item(**config.test)        # adds admin user for testing
 
     def add_item(self, user, pw):
         key = self.get_key(user, pw)
