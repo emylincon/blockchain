@@ -209,7 +209,7 @@ class BlockChain:
                     client.publish('blockchain/worker/chain', pickle.dumps(self.chain), retain=True)
                     new = self.get_last_block().block_info()
                     notify = {'info': 'block added successfully', 'nonce': new['nonce'], 'hash': new['hash']}
-                    client.publish('notification', pickle.dumps(notify))
+                    client.publish('blockchain/api/notification', pickle.dumps(notify))
                 print('cleaning...')
                 cleanup(trans_id)
                 print('done!')
@@ -270,7 +270,7 @@ class BlockChain:
             new_hash = self.get_hash(data, nonce, user, previous_hash, timestamp)
             if new_hash[:self.diff] == self.diff_string:
                 work = {trans_id: {'data': data, 'user': user, 'timestamp': timestamp,
-                                   'nonce': nonce, 'hash_id': hash}}
+                                   'nonce': nonce, 'hash_id': new_hash}}
                 print('mining completed: ', work)
                 # add_chain -> [worker_id, {data}, trans_id]
                 client.publish('blockchain/worker/add', pickle.dumps([worker_id, work, trans_id]))
