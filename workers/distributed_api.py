@@ -185,8 +185,26 @@ api.add_resource(Read, '/read/<text>')
 api.add_resource(Register, '/register/')
 
 
+class BrokerSend:
+    def __init__(self, user, pw, ip, sub_topic, data):
+        self.user = user
+        self.pw = pw
+        self.ip = ip
+        self.port = 1883
+        self.topic = sub_topic
+        self.response = None
+        self.client = mqtt.Client()
+        self.client.username_pw_set(self.user, self.pw)
+        self.client.connect(self.ip, self.port, 60)
+        self.data = data
+
+    def publish(self):
+        self.client.publish(self.topic, self.data, retain=True)
+
+
 if __name__ == '__main__':
     h1 = Thread(target=broker_loop)
     h1.start()
-    client.publish(topic='blockchain/config', payload=pickle.dumps(admin), retain=True)
+    BrokerSend(user=username, pw=password, ip=broker_ip, sub_topic='blockchain/config', data=pickle.dumps(admin)).publish()
+    print('admin:', admin)
     app.run(debug=True)
