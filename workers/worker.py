@@ -195,6 +195,7 @@ class BlockChain:
                 trans_id = self.get_transaction_id(data, user, timestamp)
                 try:
                     votes = vote_poll[trans_id]['votes']
+                    print('votes: ', votes)
                     winner = max(votes, key=votes.get)  # vote_poll = {tran_id: {votes:{worker_id: vote_amt..}, voters:set()}}
                     print('winner: ', winner)
                 except KeyError:
@@ -248,6 +249,7 @@ class BlockChain:
                 print(f'False claim | author: {key}')
         # vote = [tran_id, worker_id, who_vote_is_for]
         if trans_id in times:  # if a proof of work has been verified find min time and vote
+            print('times: ', times[trans_id])
             candidate = min(times[trans_id], key=times[trans_id].get)
             vote = [trans_id, worker_id, candidate]
             print('casting vote : ', vote)
