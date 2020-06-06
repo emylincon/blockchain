@@ -23,7 +23,7 @@ print('-----------------------------------')
 
 username = 'admin'
 password = 'password'
-broker_ip = input("Broker's IP: ").strip()
+broker_ip = '192.168.40.178'
 broker_port_no = 1883
 topic = 'blockchain/api/#'
 print('-----------------------------------')
@@ -51,7 +51,10 @@ def on_message(message_client, userdata, msg):
     print('Publisher: ', str(msg.payload, 'utf-8'))
     topic_recv = msg.topic.split('/')[-1]
     if topic_recv == 'block_winner':
-        winner = pickle.loads(msg.payload)
+        winners = pickle.loads(msg.payload)
+        print(f'winners: {winners} \nWinner: {winners[-1]}')
+        winner = winners[-1]
+
     elif topic_recv == 'notification':
         notify.update(pickle.loads(msg.payload))
 
@@ -123,7 +126,9 @@ class AddBlock(Resource):
         if sent_data != '':
             mine = {'data': sent_data, 'user': user, 'timestamp': datetime.datetime.now()}
             trans_id = get_transaction_id(**mine)
-            client.publish('blockchain/worker/mine', pickle.dumps(mine))
+            pub = {trans_id: mine}
+            client.publish('blockchain/worker/mine', pickle.dumps(pub))
+            print(f'published: {pub}')
             return json.dumps(get_response(trans_id))
         else:
             return {'error': 'no data sent'}
@@ -178,4 +183,4 @@ api.add_resource(Register, '/register/')
 
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True)

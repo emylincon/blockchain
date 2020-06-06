@@ -152,6 +152,8 @@ class BlockChain:
                 if self.get_hash(user=admin, **data)[:self.diff] == self.diff_string:
                     self.chain.append(Block(user=admin, **data))
                     client.publish('blockchain/worker/chain', pickle.dumps(self.chain), retain=True)
+                    block_winners.append(worker_id)
+                    client.publish('blockchain/api/block_winner', pickle.dumps(block_winners))
                     break
                 else:
                     data['nonce'] += 1
