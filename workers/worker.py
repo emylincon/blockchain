@@ -264,13 +264,15 @@ class BlockChain:
         elif nonce:
             nones = []
             for block in self.chain:  # checks if nonce in chain
-                if (block.nonce == nonce) and (block.user == user):
+                info = block.block_info()
+                if (info['nonce'] == nonce) and (info['user'] == user):
                     nones.append(block.block_info())
             return nones
         elif hash_:
             nones = []
             for block in self.chain:  # checks if hash in chain
-                if (block.hash == hash_) and (block.user == user):
+                info = block.block_info()
+                if (info['hash'] == hash_) and (info['user'] == user):
                     nones.append(block.block_info())
                     return nones
             return [{'error': 'invalid block'}]
@@ -279,7 +281,7 @@ class BlockChain:
         if user == self.admin:
             return [block.block_info() for block in self.chain]  # reads all data in chain
         else:
-            return [block.block_info() for block in self.chain if block.user == user]
+            return [block.block_info() for block in self.chain if block.block_info()['user'] == user]
 
 
 def initialization():
