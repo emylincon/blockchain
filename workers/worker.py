@@ -54,6 +54,7 @@ def on_message(message_client, userdata, msg):
     topic_recv = msg.topic
     if (len(chain)==0) and (topic_recv == 'blockchain/worker/chain'):
         chain = pickle.loads(msg.payload)
+        print(f'chain received: {chain}')
     elif topic_recv == 'blockchain/worker/mine':       # mine request is sent by web api
         data = pickle.loads(msg.payload)
         # trans_id = block_chain.get_transaction_id(**data)
@@ -148,6 +149,7 @@ class BlockChain:
                     break
                 else:
                     data['nonce'] += 1
+            print(f'Genesis added: {self.chain}')
 
     @property
     def diff_string(self):
@@ -257,8 +259,8 @@ class BlockChain:
 
 
 store = Data()  # initializing user data
-admin = store.get_key(**config.test)  # creating super user
-block_chain = BlockChain(admin)  # initializing block chain
+super_user = store.get_key(**config.test)  # creating super user
+block_chain = BlockChain(super_user)  # initializing block chain
 
 
 def check_mine_request():
