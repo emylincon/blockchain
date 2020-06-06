@@ -74,12 +74,18 @@ def on_message(message_client, userdata, msg):
             time_ = datetime.datetime.now()
             add_chain[add_data[2]].append({(add_data[0], time_): add_data[1]})
             verify = add_data.append(time_)  # # [worker_id, {data}, trans_id, time]
-            block_chain.check_claim(verify)
+            print('add: ', verify)
+            if verify:
+                print('not none: ', verify)
+                block_chain.check_claim(verify)
         elif add_data[0] != worker_id and (add_data[2] not in add_chain):
             time_ = datetime.datetime.now()
             add_chain[add_data[2]] = [{(add_data[0], time_): add_data[1]}]
             verify = add_data.append(time_)  # # [worker_id, {data}, trans_id, time]
-            block_chain.check_claim(verify)
+            print('add: ', verify)
+            if verify:
+                print('not none: ', verify)
+                block_chain.check_claim(verify)
     elif topic_recv == 'blockchain/worker/vote':    # [tran_id, worker_id, who_vote_is_for]
         recv = pickle.loads(msg.payload)
         if recv[0] in vote_poll:
@@ -242,16 +248,19 @@ class BlockChain:
     def election(self, trans_id, previous_hash):
         # vote = [tran_id, worker_id, who_vote_is_for]
         # if a proof of work has been verified find min time and vote
-        print('times: ', times[trans_id])
-        candidate = min(times[trans_id], key=times[trans_id].get)
-        vote = [trans_id, worker_id, candidate]
-        print('casting vote : ', vote)
-        # add chain format => {tran_id: [{(worker_id, work_time):{data, time, user, nonce, hash}}, ], }
-        for claim_dict in add_chain[trans_id]:
-            if (candidate, times[trans_id][candidate]) in claim_dict:
-                data = claim_dict[(candidate, times[trans_id][candidate])]
-                self.verified_claims[trans_id] = data.update({'previous_hash': previous_hash})
-        client.publish('blockchain/worker/vote', pickle.dumps(vote))
+        if trans_id in times:
+            print('times: ', times[trans_id])
+            candidate = min(times[trans_id], key=times[trans_id].get)
+            vote = [trans_id, worker_id, candidate]
+            print('casting vote : ', vote)
+            # add chain format => {tran_id: [{(worker_id, work_time):{data, time, user, nonce, hash}}, ], }
+            for claim_dict in add_chain[trans_id]:
+                if (candidate, times[trans_id][candidate]) in claim_dict:
+                    data = claim_dict[(candidate, times[trans_id][candidate])]
+                    self.verified_claims[trans_id] = data.update({'previous_hash': previous_hash})
+            client.publish('blockchain/worker/vote', pickle.dumps(vote))
+        else:
+            print(f'error trans_id :{trans_id} not in times :{times}')
 
         # data, add_chain[trans_id]['nonce'], user, previous_hash, timestamp
 
