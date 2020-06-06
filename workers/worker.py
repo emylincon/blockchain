@@ -14,6 +14,10 @@ import platform
 # blockchain/worker/worker_id/read
 
 # blockchain/api/block_winner, blockchain/api/notification,
+if platform.system() == 'Windows':
+    os.system('cls')
+else:
+    os.system('clear')
 
 print('-----------------------------------')
 print('           MINER / WORKER          ')
@@ -294,10 +298,6 @@ def check_read_request():
 
 
 def main():
-    if platform.system() == 'Windows':
-        os.system('cls')
-    else:
-        os.system('clear')
     try:
         h1 = Thread(target=broker_loop)
         h1.start()
