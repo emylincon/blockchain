@@ -337,20 +337,24 @@ def check_mine_request():
 def check_read_request():
     while True:
         if len(read_request) > 0:
+            remove = []
             for req_id in read_request:   # {req_id: {'user': user, 'type': all/{'nonce': nonce}/{hash: hash}}}
                 data = read_request[req_id]
                 if data['type'] == 'all':
                     notify = {req_id: block_chain.read_all(data['user'])}
                     client.publish('blockchain/api/notification', pickle.dumps(notify))
-                    del read_request[req_id]
+                    remove.append(req_id)
                 elif list(data['type'].keys())[0] in ['nonce', 'hash']:
                     notify = {req_id: block_chain.read_block(data['user'], **data['type'])}
                     client.publish('blockchain/api/notification', pickle.dumps(notify))
-                    del read_request[req_id]
+                    remove.append(req_id)
                 else:
                     notify = {req_id: {'error': 'an error occurred in read_request'}}
                     client.publish('blockchain/api/notification', pickle.dumps(notify))
-                    del read_request[req_id]
+                    #del read_request[req_id]
+                    remove.append(req_id)
+            for req_id in remove:
+                del read_request[req_id]
 
 
 def main():
