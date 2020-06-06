@@ -60,6 +60,7 @@ def on_message(message_client, userdata, msg):
 
     elif topic_recv == 'notification':
         notify.update(pickle.loads(msg.payload))
+        print(notify)
 
 
 def broker_loop():
