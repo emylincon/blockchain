@@ -8,6 +8,7 @@ from users import Data
 import config
 import os
 import time
+import platform
 
 # blockchain/worker/chain, blockchain/worker/mine, blockchain/worker/add, blockchain/worker/times,
 # blockchain/worker/worker_id/read
@@ -293,6 +294,10 @@ def check_read_request():
 
 
 def main():
+    if platform.system() == 'Windows':
+        os.system('cls')
+    else:
+        os.system('clear')
     try:
         h1 = Thread(target=broker_loop)
         h1.start()
