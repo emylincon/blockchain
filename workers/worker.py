@@ -153,6 +153,7 @@ class BlockChain:
             for i in range(self.max_nonce):
                 if self.get_hash(user=admin, **data)[:self.diff] == self.diff_string:
                     self.chain.append(Block(user=admin, **data))
+                    print('chain: ', self.chain)
                     client.publish('blockchain/worker/chain', pickle.dumps(self.chain), retain=True)
                     block_winners.append(worker_id)
                     client.publish('blockchain/api/block_winner', pickle.dumps(block_winners))
@@ -322,6 +323,7 @@ def initialization():
     # store = Data()  # initializing user data
     # super_user = store.get_key(**config.test)  # creating super user
     super_user = BrokerRequest(user=username, pw=password, ip=broker_ip, sub_topic='blockchain/config')
+    print('admin', super_user)
     block_chain = BlockChain(super_user)  # initializing block chain
 
 
