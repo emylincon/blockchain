@@ -7,6 +7,7 @@ from threading import Thread
 from users import Data
 import config
 import os
+import time
 
 # blockchain/worker/chain, blockchain/worker/mine, blockchain/worker/add, blockchain/worker/times,
 # blockchain/worker/worker_id/read
@@ -258,9 +259,11 @@ class BlockChain:
             return [block.block_info() for block in self.chain if block.user == user]
 
 
-store = Data()  # initializing user data
-super_user = store.get_key(**config.test)  # creating super user
-block_chain = BlockChain(super_user)  # initializing block chain
+def initialization():
+    global store, block_chain
+    store = Data()  # initializing user data
+    super_user = store.get_key(**config.test)  # creating super user
+    block_chain = BlockChain(super_user)  # initializing block chain
 
 
 def check_mine_request():
@@ -292,9 +295,11 @@ def check_read_request():
 def main():
     try:
         h1 = Thread(target=broker_loop)
+        h1.start()
+        time.sleep(1)
+        initialization()
         h2 = Thread(target=check_mine_request)
         h3 = Thread(target=check_read_request)
-        h1.start()
         h2.start()
         h3.start()
 
