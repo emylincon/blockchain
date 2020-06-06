@@ -188,4 +188,5 @@ api.add_resource(Register, '/register/')
 if __name__ == '__main__':
     h1 = Thread(target=broker_loop)
     h1.start()
+    client.publish(topic='blockchain/config', payload=pickle.dumps(admin), retain=True)
     app.run(debug=True)
