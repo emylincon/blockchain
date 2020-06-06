@@ -70,6 +70,7 @@ def on_message(message_client, userdata, msg):
         mine_data.update(data)
     elif topic_recv == 'blockchain/worker/add':        # this is sent by workers
         add_data = pickle.loads(msg.payload)    # [worker_id, {data}, trans_id]
+        print('add recieved:', add_data)
         if add_data[0] != worker_id and (add_data[2] in add_chain):
             time_ = datetime.datetime.now()
             add_chain[add_data[2]].append({(add_data[0], time_): add_data[1]})
@@ -291,7 +292,9 @@ class BlockChain:
                                    'nonce': nonce, 'hash_id': new_hash}}
                 print('mining completed: ', work)
                 # add_chain -> [worker_id, {data}, trans_id]
-                client.publish('blockchain/worker/add', pickle.dumps([worker_id, work, trans_id]))
+                send = pickle.dumps([worker_id, work, trans_id])
+                print('sending add:', send)
+                client.publish('blockchain/worker/add', [worker_id, work, trans_id])
                 # vote = [trans_id, worker_id, worker_id]
                 # client.publish('blockchain/worker/vote', pickle.dumps(vote))
 
