@@ -293,8 +293,8 @@ class BlockChain:
                 print('mining completed: ', work)
                 # add_chain -> [worker_id, {data}, trans_id]
                 send = pickle.dumps([worker_id, work, trans_id])
-                print('sending add:', send)
-                client.publish('blockchain/worker/add', [worker_id, work, trans_id])
+                print('sending add:', [worker_id, work, trans_id])
+                client.publish('blockchain/worker/add', send)
                 # vote = [trans_id, worker_id, worker_id]
                 # client.publish('blockchain/worker/vote', pickle.dumps(vote))
 
