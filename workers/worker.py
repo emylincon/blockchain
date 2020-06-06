@@ -4,16 +4,16 @@ import paho.mqtt.client as mqtt
 import pickle
 import socket
 from threading import Thread
-from users import Data
-import config
+# from users import Data
+# import config
 import os
 import time
 import platform
 
-# mosquitto_pub -h 192.168.40.178 -t blockchain/worker/chain -u admin -P password -n -r -d
+# mosquitto_pub -h localhost -t test -u admin -P password -n -r -d
 
 # blockchain/worker/chain, blockchain/worker/mine, blockchain/worker/add, blockchain/worker/times,
-# blockchain/worker/worker_id/read
+# blockchain/worker/worker_id/read, blockchain/worker/config
 
 # blockchain/api/block_winner, blockchain/api/notification,
 if platform.system() == 'Windows':
@@ -284,10 +284,44 @@ class BlockChain:
             return [block.block_info() for block in self.chain if block.block_info()['user'] == user]
 
 
+class BrokerRequest:
+    def __init__(self, user, pw, ip, sub_topic):
+        self.user = user
+        self.pw = pw
+        self.ip = ip
+        self.port = 1883
+        self.topic = sub_topic
+        self.response = None
+        self.client = mqtt.Client()
+
+    def on_connect(self, connect_client, userdata, flags, rc):
+        print("Connected with Code :" + str(rc))
+        # Subscribe Topic from here
+        connect_client.subscribe(self.topic)
+
+    def on_message(self, message_client, userdata, msg):
+        if pickle.loads(msg.payload):
+            self.response = pickle.loads(msg.payload)
+
+    def broker_loop(self):
+        self.client.on_connect = self.on_connect
+        self.client.on_message = self.on_message
+
+        self.client.username_pw_set(self.user, self.pw)
+        self.client.connect(self.ip, self.port, 60)
+        self.client.loop_start()
+        while True:
+            if self.response:
+                self.client.loop_stop()
+                self.client.disconnect()
+                return self.response
+
+
 def initialization():
-    global store, block_chain
-    store = Data()  # initializing user data
-    super_user = store.get_key(**config.test)  # creating super user
+    global block_chain
+    # store = Data()  # initializing user data
+    # super_user = store.get_key(**config.test)  # creating super user
+    super_user = BrokerRequest(user=username, pw=password, ip=broker_ip, sub_topic='blockchain/config')
     block_chain = BlockChain(super_user)  # initializing block chain
 
 
