@@ -74,7 +74,7 @@ def on_message(message_client, userdata, msg):
         if add_data[0] != worker_id and (add_data[2] in add_chain):
             time_ = datetime.datetime.now()
             add_chain[add_data[2]].append({(add_data[0], time_): add_data[1]})
-            verify = add_data.append(time_)  # # [worker_id, {data}, trans_id, time]
+            verify = [add_data[0], add_data[1], add_data[2], time_]  # # [worker_id, {data}, trans_id, time]
             print('add: ', verify)
             if verify:
                 print('not none: ', verify)
