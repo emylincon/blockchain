@@ -236,7 +236,8 @@ class BlockChain:
             if new_hash[:self.diff] == self.diff_string:
                 work = {trans_id: {'data': data, 'user': user, 'previous_hash': previous_hash, 'timestamp': timestamp}}
                 print('mining completed: ', work)
-                client.publish('blockchain/worker/add', pickle.dumps([worker_id, work]))
+                # add_chain -> [worker_id, {data}, trans_id]
+                client.publish('blockchain/worker/add', pickle.dumps([worker_id, work, trans_id]))
 
                 return Block(data, nonce, user, previous_hash, timestamp)
             elif trans_id in add_chain:     # add chain format => {tran_id: [{(worker_id, work_time):{data, time, user, nonce, hash}}, ], }
