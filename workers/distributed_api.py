@@ -9,6 +9,7 @@ import pickle
 import paho.mqtt.client as mqtt
 import hashlib
 import datetime
+from threading import Thread
 
 
 # blockchain/worker/chain, blockchain/worker/mine, blockchain/worker/add, blockchain/worker/times,
@@ -183,4 +184,6 @@ api.add_resource(Register, '/register/')
 
 
 if __name__ == '__main__':
+    h1 = Thread(target=broker_loop)
+    h1.start()
     app.run(debug=True)
