@@ -10,6 +10,8 @@ import os
 import time
 import platform
 
+# mosquitto_pub -h 192.168.40.178 -t blockchain/worker/chain -u admin -P password -n -r -d
+
 # blockchain/worker/chain, blockchain/worker/mine, blockchain/worker/add, blockchain/worker/times,
 # blockchain/worker/worker_id/read
 
@@ -181,21 +183,29 @@ class BlockChain:
 
     def add_block(self, data, user, timestamp):
         previous_hash = self.get_last_block().block_info()['hash']
+        print('mining block: ', (data, user, previous_hash, timestamp))
         mined_block = self.mine_block(data, user, previous_hash, timestamp)
+        print('checking duration..')
         while True:
             if (datetime.datetime.now() - timestamp) > datetime.timedelta(minutes=2):
+                print('duration complete!')
                 trans_id = self.get_transaction_id(data, user, timestamp)
                 votes = vote_poll[trans_id]['votes']
                 winner = max(votes, key=votes.get)  # vote_poll = {tran_id: {votes:{worker_id: vote_amt..}, voters:set()}}
+                print('winner: ', winner)
                 block_winners.append(winner)
                 self.chain.append(mined_block)
+                print('block added')
                 if winner == worker_id:
+                    print(' I am the winner! \nPublishing info ...')
                     client.publish('blockchain/api/block_winner', pickle.dumps(block_winners), retain=True)
                     client.publish('blockchain/worker/chain', pickle.dumps(self.chain), retain=True)
                     new = self.get_last_block().block_info()
                     notify = {'info': 'block added successfully', 'nonce': new['nonce'], 'hash': new['hash']}
                     client.publish('notification', pickle.dumps(notify))
+                print('cleaning...')
                 cleanup(trans_id)
+                print('done!')
                 break
 
     def check_pow(self, data, user, nonce, previous_hash, timestamp, hash_id):
@@ -224,21 +234,27 @@ class BlockChain:
             new_hash = self.get_hash(data, nonce, user, previous_hash, timestamp)
             if new_hash[:self.diff] == self.diff_string:
                 work = {trans_id: {'data': data, 'user': user, 'previous_hash': previous_hash, 'timestamp': timestamp}}
+                print('mining completed: ', work)
                 client.publish('blockchain/worker/add', pickle.dumps([worker_id, work]))
 
                 return Block(data, nonce, user, previous_hash, timestamp)
             elif trans_id in add_chain:     # add chain format => {tran_id: [{(worker_id, work_time):{data, time, user, nonce, hash}}, ], }
+                print('mining claim submitted.. \nverifying..')
                 for info in add_chain[trans_id]:
                     key = list(info.keys())[0]
                     if self.check_pow(previous_hash=previous_hash, **info[key]):
                         # times = {}   # {tran_id: {w1: time, w2: time}, ...}
+                        print(f'claim verified | author: {key}')
                         if trans_id in times:
                             times[trans_id].update({key[0]: key[1]})
                         else:
                             times[trans_id] = {key[0]: key[1]}
+                    else:
+                        print(f'False claim | author: {key}')
                 # vote = [tran_id, worker_id, who_vote_is_for]
                 if trans_id in times:   # if a proof of work has been verified find min time and vote
                     vote = [trans_id, worker_id, min(times[trans_id], key=times[trans_id].get)]
+                    print('casting vote : ', vote)
                     client.publish('blockchain/worker/vote', pickle.dumps(vote))
                     return Block(data, add_chain[trans_id]['nonce'], user, previous_hash, timestamp)
 
