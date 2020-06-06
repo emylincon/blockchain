@@ -29,11 +29,8 @@ class Data:             # this class stores registered user data
             str(secret).encode('utf-8')
         )
         key = h.hexdigest()
-        if self.verify(key):
-            return 0
-        else:
+        if not self.verify(key):
             self.data[key] = user
-            return 1
 
     def invert_data(self):
         return {v: k for k, v in self.data.items()}
