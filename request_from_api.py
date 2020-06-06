@@ -2,7 +2,7 @@ import requests
 import json
 import config
 
-url = 'http://192.168.40.178:5000/'
+url = 'http://127.0.0.1:5000/'
 auth = ('username', 'password')
 auth1 = ('john', 'pass')
 
@@ -29,10 +29,11 @@ def post_data(data, auth_=None, endpoint=''):
     return d
 
 
-# post_data(endpoint='register/', data={"user": "john", "pw": "pass"})
-# response = post_data(endpoint='add/', data={'name': 'emeka'}, auth_=auth1)
-# get_data(endpoint='read/{"nonce":' + f'{response["nonce"]}' + '}', auth_=auth1)
+post_data(endpoint='register/', data={"user": "john", "pw": "pass"})
+response = post_data(endpoint='add/', data={'name': 'emeka'}, auth_=auth1)
+get_data(endpoint='read/{"nonce":' + f'{response["nonce"]}' + '}', auth_=auth1)
 # get_data(endpoint='read/{"hash_":' + f'"{response["hash"]}"' + '}', auth_=auth1)
 # get_data(endpoint='read/all', auth_=auth1)
-#get_data(endpoint='read/all', auth_=config.t)
-get_data()
+# get_data(endpoint='read/all', auth_=config.t)
+# get_data()
+
