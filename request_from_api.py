@@ -2,7 +2,7 @@ import requests
 import json
 import config
 
-url = 'http://192.168.40.169:5000/'
+url = 'http://192.168.40.178:5000/'
 auth = ('username', 'password')
 auth1 = ('john', 'pass')
 
