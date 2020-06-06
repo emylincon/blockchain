@@ -34,4 +34,5 @@ def post_data(data, auth_=None, endpoint=''):
 # get_data(endpoint='read/{"nonce":' + f'{response["nonce"]}' + '}', auth_=auth1)
 # get_data(endpoint='read/{"hash_":' + f'"{response["hash"]}"' + '}', auth_=auth1)
 # get_data(endpoint='read/all', auth_=auth1)
-get_data(endpoint='read/all', auth_=config.t)
+#get_data(endpoint='read/all', auth_=config.t)
+get_data()
