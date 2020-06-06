@@ -11,6 +11,7 @@ import hashlib
 import datetime
 from threading import Thread
 
+# cd home/ ; git clone https://github.com/emylincon/blockchain ; cd blockchain/workers
 
 # blockchain/worker/chain, blockchain/worker/mine, blockchain/worker/add, blockchain/worker/times,
 # blockchain/worker/worker_id/read
@@ -24,7 +25,7 @@ print('-----------------------------------')
 
 username = 'admin'
 password = 'password'
-broker_ip = '192.168.40.178'
+broker_ip = '192.168.40.180'
 broker_port_no = 1883
 topic = 'blockchain/api/#'
 print('-----------------------------------')
@@ -49,8 +50,9 @@ def on_message(message_client, userdata, msg):
     global winner
 
     # print the message received from the subscribed topic
-    print('Publisher: ', str(msg.payload, 'utf-8'))
+    print('top: ', msg.topic)
     topic_recv = msg.topic.split('/')[-1]
+    print('topic received:', topic_recv)
     if topic_recv == 'block_winner':
         winners = pickle.loads(msg.payload)
         print(f'winners: {winners} \nWinner: {winners[-1]}')
