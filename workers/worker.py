@@ -51,7 +51,7 @@ def on_connect(connect_client, userdata, flags, rc):
 def on_message(message_client, userdata, msg):
     global chain
     # print the message received from the subscribed topic
-    print('Publisher: ', str(msg.payload, 'utf-8'))
+    print(f'Topic received: {msg.topic}')
     topic_recv = msg.topic
     if (len(chain)==0) and (topic_recv == 'blockchain/worker/chain'):
         chain = pickle.loads(msg.payload)
@@ -296,7 +296,7 @@ def main():
     try:
         h1 = Thread(target=broker_loop)
         h1.start()
-        time.sleep(1)
+        time.sleep(3)
         initialization()
         h2 = Thread(target=check_mine_request)
         h3 = Thread(target=check_read_request)
