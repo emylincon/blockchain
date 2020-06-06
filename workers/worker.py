@@ -322,8 +322,8 @@ def initialization():
     global block_chain
     # store = Data()  # initializing user data
     # super_user = store.get_key(**config.test)  # creating super user
-    super_user = BrokerRequest(user=username, pw=password, ip=broker_ip, sub_topic='blockchain/config')
-    print('admin', super_user)
+    super_user = BrokerRequest(user=username, pw=password, ip=broker_ip, sub_topic='blockchain/config').broker_loop()
+    print('admin: ', super_user)
     block_chain = BlockChain(super_user)  # initializing block chain
 
 
