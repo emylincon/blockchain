@@ -135,7 +135,8 @@ class Block:
 def cleanup(trans_id):
     to_clean = [add_chain, mine_data, times, vote_poll]
     for point in to_clean:
-        del point[trans_id]
+        if trans_id in point:
+            del point[trans_id]
 
 
 class BlockChain:
