@@ -208,11 +208,9 @@ class BlockChain:
                     client.publish('blockchain/api/block_winner', pickle.dumps(block_winners), retain=True)
                     client.publish('blockchain/worker/chain', pickle.dumps(self.chain), retain=True)
                     new = self.get_last_block().block_info()
-                    notify = {'info': 'block added successfully', 'nonce': new['nonce'], 'hash': new['hash']}
+                    notify = {trans_id: {'info': 'block added successfully', 'nonce': new['nonce'], 'hash': new['hash']}}
                     client.publish('blockchain/api/notification', pickle.dumps(notify))
-                print('cleaning...')
-                cleanup(trans_id)
-                print('done!')
+                clean.append(trans_id)
                 break
 
     def check_pow(self, data, user, nonce, previous_hash, timestamp, hash_id):
@@ -351,11 +349,18 @@ def initialization():
     block_chain = BlockChain(super_user)  # initializing block chain
 
 
+clean = []
+
+
 def check_mine_request():
     while True:
         if len(mine_data) > 0:
             for trans in mine_data:
                 block_chain.add_block(**mine_data[trans])
+            print('cleaning...')
+            for i in clean:
+                cleanup(i)
+            print('done!')
 
 
 def check_read_request():
