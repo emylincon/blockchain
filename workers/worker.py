@@ -82,7 +82,7 @@ def on_message(message_client, userdata, msg):
         elif add_data[0] != worker_id and (add_data[2] not in add_chain):
             time_ = datetime.datetime.now()
             add_chain[add_data[2]] = [{(add_data[0], time_): add_data[1]}]
-            verify = add_data.append(time_)  # # [worker_id, {data}, trans_id, time]
+            verify = [add_data[0], add_data[1], add_data[2], time_]  # # [worker_id, {data}, trans_id, time]
             print('add: ', verify)
             if verify:
                 print('not none: ', verify)
@@ -271,7 +271,9 @@ class BlockChain:
         if self.check_pow(previous_hash=previous_hash, **verify[1]):
             # times = {}   # {tran_id: {w1: time, w2: time}, ...}
             if (verify[2] not in self.verified_claims) and (self.mining == 1):
-                self.verified_claims[verify[2]] = verify[1].update({'previous_hash': previous_hash})
+                to_add = {'previous_hash': previous_hash, **verify[1]}
+                if len(to_add) == 5:    # checks if variables are complete,bcos pickle objs are very sensitive to change
+                    self.verified_claims[verify[2]] = to_add
             print(f'claim verified | author: {verify[0]}')
             if verify[2] in times:
                 times[verify[2]].update({verify[0]: verify[-1]})
