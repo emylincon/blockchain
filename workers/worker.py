@@ -288,8 +288,7 @@ class BlockChain:
         for nonce in range(self.max_nonce):
             new_hash = self.get_hash(data, nonce, user, previous_hash, timestamp)
             if new_hash[:self.diff] == self.diff_string:
-                work = {trans_id: {'data': data, 'user': user, 'timestamp': timestamp,
-                                   'nonce': nonce, 'hash_id': new_hash}}
+                work = {'data': data, 'user': user, 'timestamp': timestamp, 'nonce': nonce, 'hash_id': new_hash}
                 print('mining completed: ', work)
                 # add_chain -> [worker_id, {data}, trans_id]
                 send = pickle.dumps([worker_id, work, trans_id])
