@@ -20,6 +20,9 @@ class Data:             # this class stores registered user data
     def delete_item(self, key):
         del self.data[key]
 
+    def invert_data(self):
+        return {v: k for k, v in self.data.items()}
+
     def verify(self, key):
         if key in self.data:
             return True
