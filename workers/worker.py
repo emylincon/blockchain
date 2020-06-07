@@ -70,22 +70,22 @@ def on_message(message_client, userdata, msg):
         mine_data.update(data)
     elif topic_recv == 'blockchain/worker/add':        # this is sent by workers
         add_data = pickle.loads(msg.payload)    # [worker_id, {data}, trans_id]
-        print('add recieved:', add_data)
+        #print('add recieved:', add_data)
         if add_data[0] != worker_id and (add_data[2] in add_chain):
             time_ = datetime.datetime.now()
             add_chain[add_data[2]].append({(add_data[0], time_): add_data[1]})
             verify = [add_data[0], add_data[1], add_data[2], time_]  # # [worker_id, {data}, trans_id, time]
-            print('add: ', verify)
+            #print('add: ', verify)
             if verify:
-                print('not none: ', verify)
+                #print('not none: ', verify)
                 block_chain.check_claim(verify)
         elif add_data[0] != worker_id and (add_data[2] not in add_chain):
             time_ = datetime.datetime.now()
             add_chain[add_data[2]] = [{(add_data[0], time_): add_data[1]}]
             verify = [add_data[0], add_data[1], add_data[2], time_]  # # [worker_id, {data}, trans_id, time]
-            print('add: ', verify)
+            #print('add: ', verify)
             if verify:
-                print('not none: ', verify)
+                #print('not none: ', verify)
                 block_chain.check_claim(verify)
     elif topic_recv == 'blockchain/worker/vote':    # [tran_id, worker_id, who_vote_is_for]
         recv = pickle.loads(msg.payload)
