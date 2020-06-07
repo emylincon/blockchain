@@ -25,7 +25,7 @@ print('-----------------------------------')
 
 username = 'admin'
 password = 'password'
-broker_ip = '192.168.40.180'
+broker_ip = '192.168.40.202'
 broker_port_no = 1883
 topic = 'blockchain/api/#'
 print('-----------------------------------')
@@ -158,8 +158,11 @@ class Read(Resource):
             d = {'data': get, 'user': user, 'timestamp': str(datetime.datetime.now())}
             trans_id = get_transaction_id(**d)
             client.publish(f'blockchain/worker/{winner}/read', pickle.dumps({trans_id: get}))
+            print(f'read resquest sent: {d}')
             response = get_response(trans_id)
             if type(response).__name__ == 'list':
+                for da in response:
+                    da['date'] = str(da['date'])
                 response.append(name)
             return json.dumps(response)
         else:
@@ -170,8 +173,11 @@ class Read(Resource):
                     d = {'data': get, 'user': user, 'timestamp': str(datetime.datetime.now())}
                     trans_id = get_transaction_id(**d)
                     client.publish(f'blockchain/worker/{winner}/read', pickle.dumps({trans_id: get}))
+                    print(f'read resquest sent: {d}')
                     response = get_response(trans_id)
                     if type(response).__name__ == 'list':
+                        for da in response:
+                            da['date'] = str(da['date'])
                         response.append(name)
                     return json.dumps(response)         # reads a particular block with nonce id or hash
                 else:
