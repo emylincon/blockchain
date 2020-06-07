@@ -1,6 +1,7 @@
 import requests
 import json
 import config
+import ast
 
 url = 'http://127.0.0.1:5000/'
 auth = ('username', 'password')
@@ -30,10 +31,15 @@ def post_data(data, auth_=None, endpoint=''):
 
 
 post_data(endpoint='register/', data={"user": "john", "pw": "pass"})
-response = post_data(endpoint='add/', data={'name': 'emeka'}, auth_=auth1)
-get_data(endpoint='read/{"nonce":' + f'{response["nonce"]}' + '}', auth_=auth1)
-# get_data(endpoint='read/{"hash_":' + f'"{response["hash"]}"' + '}', auth_=auth1)
-# get_data(endpoint='read/all', auth_=auth1)
-# get_data(endpoint='read/all', auth_=config.t)
+res = post_data(endpoint='add/', data={'name': 'emeka'}, auth_=auth1)
+print('type', type(res))
+if type(res).__name__ == 'str':
+    res = ast.literal_eval(res)
+req1 = {"nonce": res["nonce"]}
+get_data(endpoint=f'read/{req1}', auth_=auth1)
+req2 = {"hash_": res["hash"]}
+get_data(endpoint=f'read/{req2}', auth_=auth1)
+get_data(endpoint='read/all', auth_=auth1)
+get_data(endpoint='read/all', auth_=config.t)
 # get_data()
 
