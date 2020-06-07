@@ -370,7 +370,7 @@ class BrokerRequest:
                 self.client.loop_stop()
                 self.client.disconnect()
                 return self.response
-    
+
     def __del__(self):
         print('BrokerRequest Object Deleted!')
 
