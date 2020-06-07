@@ -208,10 +208,15 @@ class BrokerSend:
     def publish(self):
         self.client.publish(self.topic, self.data, retain=True)
 
+    def __del__(self):
+        print('BrokerSend Object Deleted!')
+
 
 if __name__ == '__main__':
     h1 = Thread(target=broker_loop)
     h1.start()
-    BrokerSend(user=username, pw=password, ip=broker_ip, sub_topic='blockchain/config', data=pickle.dumps(admin)).publish()
+    bs = BrokerSend(user=username, pw=password, ip=broker_ip, sub_topic='blockchain/config', data=pickle.dumps(admin))
+    bs.publish()
+    del bs
     print('admin:', admin)
     app.run(debug=True)

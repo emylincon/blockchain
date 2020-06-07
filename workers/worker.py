@@ -374,9 +374,9 @@ class BrokerRequest:
 
 def initialization():
     global block_chain
-    # store = Data()  # initializing user data
-    # super_user = store.get_key(**config.test)  # creating super user
-    super_user = BrokerRequest(user=username, pw=password, ip=broker_ip, sub_topic='blockchain/config').broker_loop()
+    br = BrokerRequest(user=username, pw=password, ip=broker_ip, sub_topic='blockchain/config')
+    super_user = br.broker_loop()
+    del br
     print('admin: ', super_user)
     block_chain = BlockChain(super_user)  # initializing block chain
 
