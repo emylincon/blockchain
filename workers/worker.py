@@ -135,7 +135,7 @@ class Block:
         return h.hexdigest()
 
     def block_info(self):
-        return {'nonce': self.__nonce, 'data': self.__data, 'date': self.__timestamp, 'hash': self.__hash}
+        return {'nonce': self.__nonce, 'data': self.__data, 'date': self.__timestamp, 'hash': self.__hash, 'user': self.__user}
 
     def __str__(self):
         block_dict = self.block_info()
@@ -161,6 +161,7 @@ class BlockChain:
         self.con_id = 1    # contract id
         self.verified_claims = {}  # id : {}
         self.add_genesis(admin)
+        self.mining = 0
 
     def add_genesis(self, admin):
         data = {'data':'Genesis', 'nonce':1, 'previous_hash':'0x0', 'timestamp':str(datetime.datetime.now())}
@@ -202,7 +203,7 @@ class BlockChain:
         print('mining block: ', (data, user, previous_hash, timestamp))
         mined_block = self.mine_block(data, user, previous_hash, timestamp)
         trans_id = self.get_transaction_id(data, user, timestamp)
-        self.election(trans_id, previous_hash)
+        self.election(trans_id)
         print('checking voting Timeout..')
         while True:
             if (datetime.datetime.now() - timestamp) > datetime.timedelta(minutes=1):
@@ -246,7 +247,8 @@ class BlockChain:
 
         return h.hexdigest()
 
-    def election(self, trans_id, previous_hash):
+    @staticmethod
+    def election(trans_id):
         # vote = [tran_id, worker_id, who_vote_is_for]
         # if a proof of work has been verified find min time and vote
         if trans_id in times:
@@ -254,11 +256,6 @@ class BlockChain:
             candidate = min(times[trans_id], key=times[trans_id].get)
             vote = [trans_id, worker_id, candidate]
             print('casting vote : ', vote)
-            # add chain format => {tran_id: [{(worker_id, work_time):{data, time, user, nonce, hash}}, ], }
-            for claim_dict in add_chain[trans_id]:
-                if (candidate, times[trans_id][candidate]) in claim_dict:
-                    data = claim_dict[(candidate, times[trans_id][candidate])]
-                    self.verified_claims[trans_id] = data.update({'previous_hash': previous_hash})
             client.publish('blockchain/worker/vote', pickle.dumps(vote))
         else:
             print(f'error trans_id :{trans_id} not in times :{times}')
@@ -273,9 +270,12 @@ class BlockChain:
         print(f'checking pow: {verify}')
         if self.check_pow(previous_hash=previous_hash, **verify[1]):
             # times = {}   # {tran_id: {w1: time, w2: time}, ...}
+            if (verify[2] not in self.verified_claims) and (self.mining == 1):
+                self.verified_claims[verify[2]] = verify[1].update({'previous_hash': previous_hash})
             print(f'claim verified | author: {verify[0]}')
             if verify[2] in times:
                 times[verify[2]].update({verify[0]: verify[-1]})
+
             else:
                 times[verify[2]] = {verify[0]: verify[-1]}
         else:
@@ -284,22 +284,30 @@ class BlockChain:
     def mine_block(self, data, user, previous_hash, timestamp):
         """this function does the block mining, the job of the block mining is to make sure the hash of a block
          matches the given pattern set by the diff_string. """
+        self.mining = 1
         trans_id = self.get_transaction_id(data, user, timestamp)
         for nonce in range(self.max_nonce):
             new_hash = self.get_hash(data, nonce, user, previous_hash, timestamp)
             if new_hash[:self.diff] == self.diff_string:
                 work = {'data': data, 'user': user, 'timestamp': timestamp, 'nonce': nonce, 'hash_id': new_hash}
                 print('mining completed: ', work)
+                self.mining = 0
                 # add_chain -> [worker_id, {data}, trans_id]
                 send = pickle.dumps([worker_id, work, trans_id])
                 print('sending add:', [worker_id, work, trans_id])
                 client.publish('blockchain/worker/add', send)
+                # adding worker finishing time
+                if trans_id in times:
+                    times[trans_id].update({worker_id: datetime.datetime.now()})
+                else:
+                    times[trans_id] = {worker_id: datetime.datetime.now()}
                 # vote = [trans_id, worker_id, worker_id]
                 # client.publish('blockchain/worker/vote', pickle.dumps(vote))
 
                 return Block(data, nonce, user, previous_hash, timestamp)
             elif trans_id in self.verified_claims:     # add chain format => {tran_id: [{(worker_id, work_time):{data, time, user, nonce, hash}}, ], }
                     block = Block(**self.verified_claims[trans_id])
+                    self.mining = 0
                     del self.verified_claims[trans_id]
                     return block
 
