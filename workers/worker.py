@@ -4,8 +4,6 @@ import paho.mqtt.client as mqtt
 import pickle
 import socket
 from threading import Thread
-# from users import Data
-# import config
 import os
 import time
 import platform
@@ -65,8 +63,6 @@ def on_message(message_client, userdata, msg):
         print(f'chain received: {chain}')
     elif topic_recv == 'blockchain/worker/mine':       # mine request is sent by web api
         data = pickle.loads(msg.payload)
-        # trans_id = block_chain.get_transaction_id(**data)
-        # d = {trans_id: data}
         mine_data.update(data)
     elif topic_recv == 'blockchain/worker/add':        # this is sent by workers
         add_data = pickle.loads(msg.payload)    # [worker_id, {data}, trans_id]
@@ -415,7 +411,6 @@ def check_read_request():
                 else:
                     notify = {req_id: {'error': 'an error occurred in read_request'}}
                     client.publish('blockchain/api/notification', pickle.dumps(notify))
-                    #del read_request[req_id]
                     remove.append(req_id)
             for req_id in remove:
                 del read_request[req_id]
