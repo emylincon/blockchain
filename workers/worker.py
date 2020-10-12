@@ -202,7 +202,7 @@ class BlockChain:
         self.election(trans_id)
         print('checking voting Timeout..')
         while True:
-            if (datetime.datetime.now() - timestamp) > datetime.timedelta(minutes=1):
+            if (datetime.datetime.now() - timestamp) > datetime.timedelta(seconds=5):
                 print('duration complete!')
                 try:
                     votes = vote_poll[trans_id]['votes']
