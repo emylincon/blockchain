@@ -41,5 +41,5 @@ req2 = {"hash_": res["hash"]}
 get_data(endpoint=f'read/{req2}', auth_=auth1)
 get_data(endpoint='read/all', auth_=auth1)
 get_data(endpoint='read/all', auth_=config.t)
-# get_data()
+get_data()
 
