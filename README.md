@@ -1,3 +1,6 @@
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/emylincon/blockchain/AppTest?style=for-the-badge)
+
+![status](https://github.com/emylincon/blockchain/workflows/AppTest/badge.svg)
 # Blockchain API
 Simple blockchain api implementation with login feature
 
