@@ -8,6 +8,7 @@ Simple blockchain api implementation with login feature
 * static smart contract feature
 
 # Decentralised Implementation in the workers directory
+![High Level Architecture](workers/architecture.png)
 ## Features
 * json request and response
 * supports read and write
