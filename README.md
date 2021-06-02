@@ -30,8 +30,9 @@ Sample API python requests can be seen on `request_from_api.py`
 import requests
 url = '10.1.1.1'
 endpoint = '/register'
-data = {"user": "john", "pw": "pass"}
+data = {"user": "john", "pw": "pass", "name": "emeka"}
 requests.post(url + endpoint, json=data)
+
 ```
 
 ### To Add data
