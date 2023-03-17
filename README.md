@@ -1,4 +1,4 @@
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/emylincon/blockchain/AppTest?style=for-the-badge)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/emylincon/blockchain/python-app.yml?style=for-the-badge&branch=master)
 
 ![status](https://github.com/emylincon/blockchain/workflows/AppTest/badge.svg)
 # Blockchain API
