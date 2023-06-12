@@ -1,0 +1,28 @@
+---
+version: '3.8'
+services:
+  broker:
+    image: eclipse-mosquitto:2.0.15
+    ports:
+      - 1883:1883
+      - 9001:9001
+  web-api:
+    build: .
+    command: workers/distributed_api.py
+    environment:
+      - BROKER_IP=broker
+      - BROKER_PORT=1883
+
+  worker1:
+    build: .
+    command: workers/worker.py
+    environment:
+      - BROKER_IP=broker
+      - BROKER_PORT=1883
+
+  worker2:
+    build: .
+    command: workers/worker.py
+    environment:
+      - BROKER_IP=broker
+      - BROKER_PORT=1883
