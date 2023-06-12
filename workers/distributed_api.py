@@ -10,6 +10,10 @@ import paho.mqtt.client as mqtt
 import hashlib
 import datetime
 from threading import Thread
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # take environment variables from .env
 
 # cd home/ ; git clone https://github.com/emylincon/blockchain ; cd blockchain/workers
 
@@ -19,16 +23,7 @@ from threading import Thread
 # blockchain/api/block_winner, blockchain/api/notification,
 
 
-print('-----------------------------------')
-print('        BLOCK CHAIN JSON API       ')
-print('-----------------------------------')
 
-username = 'admin'
-password = 'password'
-broker_ip = '192.168.40.202'
-broker_port_no = 1883
-topic = 'blockchain/api/#'
-print('-----------------------------------')
 
 app = Flask(__name__)
 api = Api(app)                # initializing app
@@ -40,7 +35,7 @@ client = mqtt.Client()
 
 
 def on_connect(connect_client, userdata, flags, rc):
-    print("Connected with Code :" +str(rc))
+    print("Connected with Code :" + str(rc))
     # Subscribe Topic from here
     connect_client.subscribe(topic)
 
@@ -96,10 +91,12 @@ class HomePage(Resource):
 
 class Register(Resource):       # Registration resource
     @staticmethod
-    def post():          # user sends a json containing username & password -> {"user": "john", "pw": "pass"}
+    # user sends a json containing username & password -> {"user": "john", "pw": "pass"}
+    def post():
         try:
             reg_data = request.get_json()
-            if set(reg_data.keys()) == {'user', 'pw'}:   # checks if format is followed
+            # checks if format is followed
+            if set(reg_data.keys()) == {'user', 'pw'}:
                 if store.add_item(**reg_data) == 1:
                     return json.dumps({'info': f'registration successful for {reg_data["user"]}'})
                 else:
@@ -125,10 +122,12 @@ class AddBlock(Resource):
     @staticmethod
     @auth_required
     def post():
-        user = store.get_key(request.authorization.username, request.authorization.password)
+        user = store.get_key(request.authorization.username,
+                             request.authorization.password)
         sent_data = request.get_json()
         if sent_data != '':
-            mine = {'data': sent_data, 'user': user, 'timestamp': datetime.datetime.now()}
+            mine = {'data': sent_data, 'user': user,
+                    'timestamp': datetime.datetime.now()}
             trans_id = get_transaction_id(**mine)
             pub = {trans_id: mine}
             client.publish('blockchain/worker/mine', pickle.dumps(pub))
@@ -150,14 +149,17 @@ class Read(Resource):
     @staticmethod
     @auth_required
     def get(text):
-        user = store.get_key(request.authorization.username, request.authorization.password)
+        user = store.get_key(request.authorization.username,
+                             request.authorization.password)
         name = {'user': request.authorization.username}
         # {req_id: {'user': user, 'type': {all: all} / {'nonce': nonce} / {hash: hash}}}
         if text == 'all':           # reads all data in block chain
             get = {'user': user, 'type': 'all'}
-            d = {'data': get, 'user': user, 'timestamp': str(datetime.datetime.now())}
+            d = {'data': get, 'user': user,
+                 'timestamp': str(datetime.datetime.now())}
             trans_id = get_transaction_id(**d)
-            client.publish(f'blockchain/worker/{winner}/read', pickle.dumps({trans_id: get}))
+            client.publish(
+                f'blockchain/worker/{winner}/read', pickle.dumps({trans_id: get}))
             print(f'read resquest sent: {d}')
             response = get_response(trans_id)
             if type(response).__name__ == 'list':
@@ -167,19 +169,23 @@ class Read(Resource):
             return json.dumps(response)
         else:
             try:
-                data = ast.literal_eval(text)      # converts data to dictionary
+                # converts data to dictionary
+                data = ast.literal_eval(text)
                 if type(data).__name__ == 'dict':
                     get = {'user': user, 'type': data}
-                    d = {'data': get, 'user': user, 'timestamp': str(datetime.datetime.now())}
+                    d = {'data': get, 'user': user,
+                         'timestamp': str(datetime.datetime.now())}
                     trans_id = get_transaction_id(**d)
-                    client.publish(f'blockchain/worker/{winner}/read', pickle.dumps({trans_id: get}))
+                    client.publish(
+                        f'blockchain/worker/{winner}/read', pickle.dumps({trans_id: get}))
                     print(f'read resquest sent: {d}')
                     response = get_response(trans_id)
                     if type(response).__name__ == 'list':
                         for da in response:
                             da['date'] = str(da['date'])
                         response.append(name)
-                    return json.dumps(response)         # reads a particular block with nonce id or hash
+                    # reads a particular block with nonce id or hash
+                    return json.dumps(response)
                 else:
                     return json.dumps({'error': 'wrong format -> Example -> {nonce: 1} or {hash_: 127hdwu861eh}'})
             except Exception as e:
@@ -201,7 +207,7 @@ class BrokerSend:
         self.topic = sub_topic
         self.response = None
         self.client = mqtt.Client()
-        self.client.username_pw_set(self.user, self.pw)
+        # self.client.username_pw_set(self.user, self.pw)
         self.client.connect(self.ip, self.port, 60)
         self.data = data
 
@@ -213,9 +219,20 @@ class BrokerSend:
 
 
 if __name__ == '__main__':
+    print('-----------------------------------')
+    print('        BLOCK CHAIN JSON API       ')
+    print('-----------------------------------')
+
+    username = os.getenv("BROKER_USERNAME")
+    password = os.getenv("BROKER_PASSWORD")
+    broker_ip = os.getenv("BROKER_IP")
+    broker_port_no = int(os.getenv("BROKER_PORT"))
+    topic = 'blockchain/api/#'
+   
     h1 = Thread(target=broker_loop)
     h1.start()
-    bs = BrokerSend(user=username, pw=password, ip=broker_ip, sub_topic='blockchain/config', data=pickle.dumps(admin))
+    bs = BrokerSend(user=username, pw=password, ip=broker_ip,
+                    sub_topic='blockchain/config', data=pickle.dumps(admin))
     bs.publish()
     del bs
     print('admin:', admin)
