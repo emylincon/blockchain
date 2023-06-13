@@ -6,12 +6,29 @@ services:
     ports:
       - 1883:1883
       - 9001:9001
+    healthcheck:
+      test: [ "CMD", "nc", "-zv", "localhost", "1883" ]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+
   web-api:
     build: .
     command: workers/distributed_api.py
     environment:
       - BROKER_IP=broker
       - BROKER_PORT=1883
+    depends_on:
+      broker:
+        condition: service_healthy
+    ports:
+      - 5001:5000
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/" ]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   worker1:
     build: .
@@ -19,6 +36,11 @@ services:
     environment:
       - BROKER_IP=broker
       - BROKER_PORT=1883
+    depends_on:
+      broker:
+        condition: service_healthy
+      web-api:
+        condition: service_healthy
 
   worker2:
     build: .
@@ -26,3 +48,8 @@ services:
     environment:
       - BROKER_IP=broker
       - BROKER_PORT=1883
+    depends_on:
+      broker:
+        condition: service_healthy
+      web-api:
+        condition: service_healthy
