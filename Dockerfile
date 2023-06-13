@@ -1,10 +1,12 @@
 FROM python:3.8
 
-COPY . .
-
 WORKDIR /blockchain
 
-RUN apt update && apt install -y mosquitto mosquitto-clients && \
-    pip install -r requirements
+COPY . .
 
-CMD [python]
+RUN apt update && apt install -y mosquitto mosquitto-clients curl && \
+    pip install -r requirements.txt
+
+ENTRYPOINT [ "python" ]
+
+CMD ["workers/distributed_api.py"]
