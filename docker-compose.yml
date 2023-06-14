@@ -12,6 +12,13 @@ services:
       timeout: 5s
       retries: 10
 
+  topic:
+    build: .
+    command: test.py
+    depends_on:
+      broker:
+        condition: service_healthy
+
   web-api:
     build: .
     command: workers/distributed_api.py
