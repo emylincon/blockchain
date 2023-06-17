@@ -1,23 +1,18 @@
 ---
 version: '3.8'
+
 services:
   broker:
-    image: eclipse-mosquitto:2.0.15
+    build:
+      context: ./broker
+      dockerfile: Dockerfile
     ports:
       - 1883:1883
-      - 9001:9001
     healthcheck:
       test: [ "CMD", "nc", "-zv", "localhost", "1883" ]
-      interval: 30s
+      interval: 15s
       timeout: 5s
       retries: 10
-
-  topic:
-    build: .
-    command: test.py
-    depends_on:
-      broker:
-        condition: service_healthy
 
   web-api:
     build: .
@@ -32,7 +27,7 @@ services:
       - 5001:5000
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5000/" ]
-      interval: 1m
+      interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
