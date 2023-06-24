@@ -3,7 +3,7 @@ import json
 import config
 import ast
 
-url = "http://localhost:5000/"
+url = "http://localhost:8080/"
 auth = ("username", "password")
 auth1 = ("john", "pass")
 

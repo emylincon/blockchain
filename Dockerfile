@@ -2,7 +2,7 @@ FROM python:3.8
 
 WORKDIR /blockchain
 
-EXPOSE 5000
+EXPOSE 8080
 
 COPY . .
 

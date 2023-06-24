@@ -23,14 +23,12 @@ load_dotenv()  # take environment variables from .env
 # blockchain/api/block_winner, blockchain/api/notification,
 
 
-
-
 app = Flask(__name__)
-api = Api(app)                # initializing app
-store = Data()                # initializing user data
-admin = store.get_key(**config.test)     # creating super user
-winner = ''
-notify = {}    # id : data
+api = Api(app)  # initializing app
+store = Data()  # initializing user data
+admin = store.get_key(**config.test)  # creating super user
+winner = ""
+notify = {}  # id : data
 client = mqtt.Client()
 
 
@@ -45,15 +43,15 @@ def on_message(message_client, userdata, msg):
     global winner
 
     # print the message received from the subscribed topic
-    print('top: ', msg.topic)
-    topic_recv = msg.topic.split('/')[-1]
-    print('topic received:', topic_recv)
-    if topic_recv == 'block_winner':
+    print("top: ", msg.topic)
+    topic_recv = msg.topic.split("/")[-1]
+    print("topic received:", topic_recv)
+    if topic_recv == "block_winner":
         winners = pickle.loads(msg.payload)
-        print(f'winners: {winners} \nWinner: {winners[-1]}')
+        print(f"winners: {winners} \nWinner: {winners[-1]}")
         winner = winners[-1]
 
-    elif topic_recv == 'notification':
+    elif topic_recv == "notification":
         notify.update(pickle.loads(msg.payload))
         print(notify)
 
@@ -67,7 +65,7 @@ def broker_loop():
     client.loop_forever()
 
 
-def auth_required(f):           # user verification authentication
+def auth_required(f):  # user verification authentication
     @wraps(f)
     def decorated(*args, **kwargs):
         auth = request.authorization
@@ -86,33 +84,45 @@ def auth_required(f):           # user verification authentication
 class HomePage(Resource):
     @staticmethod
     def get():
-        return {'about': 'Welcome to Emeka\'s implementation of blockchain! To Register use endpoint=> register/'}
+        return {
+            "about": "Welcome to Emeka's implementation of blockchain! To Register use endpoint=> register/"
+        }
 
 
-class Register(Resource):       # Registration resource
+class Register(Resource):  # Registration resource
     @staticmethod
     # user sends a json containing username & password -> {"user": "john", "pw": "pass"}
     def post():
         try:
             reg_data = request.get_json()
             # checks if format is followed
-            if set(reg_data.keys()) == {'user', 'pw'}:
+            if set(reg_data.keys()) == {"user", "pw"}:
                 if store.add_item(**reg_data) == 1:
-                    return json.dumps({'info': f'registration successful for {reg_data["user"]}'})
+                    return json.dumps(
+                        {"info": f'registration successful for {reg_data["user"]}'}
+                    )
                 else:
-                    return json.dumps({'error': f'Error {reg_data["user"]} already exists'})
+                    return json.dumps(
+                        {"error": f'Error {reg_data["user"]} already exists'}
+                    )
             else:
-                return json.dumps({'error': 'invalid data sent: format -> {"user": "john", "pw": "pass"}'})
+                return json.dumps(
+                    {
+                        "error": 'invalid data sent: format -> {"user": "john", "pw": "pass"}'
+                    }
+                )
         except AttributeError:
-            return json.dumps({'error': 'invalid data sent: format -> {"user": "john", "pw": "pass"}'})
+            return json.dumps(
+                {"error": 'invalid data sent: format -> {"user": "john", "pw": "pass"}'}
+            )
 
 
 def get_transaction_id(data, user, timestamp):
     h = hashlib.sha256()
     h.update(
-        str(data).encode('utf-8') +
-        str(user).encode('utf-8') +
-        str(timestamp).encode('utf-8')
+        str(data).encode("utf-8")
+        + str(user).encode("utf-8")
+        + str(timestamp).encode("utf-8")
     )
 
     return h.hexdigest()
@@ -122,19 +132,23 @@ class AddBlock(Resource):
     @staticmethod
     @auth_required
     def post():
-        user = store.get_key(request.authorization.username,
-                             request.authorization.password)
+        user = store.get_key(
+            request.authorization.username, request.authorization.password
+        )
         sent_data = request.get_json()
-        if sent_data != '':
-            mine = {'data': sent_data, 'user': user,
-                    'timestamp': datetime.datetime.now()}
+        if sent_data != "":
+            mine = {
+                "data": sent_data,
+                "user": user,
+                "timestamp": datetime.datetime.now(),
+            }
             trans_id = get_transaction_id(**mine)
             pub = {trans_id: mine}
-            client.publish('blockchain/worker/mine', pickle.dumps(pub))
-            print(f'published: {pub}')
+            client.publish("blockchain/worker/mine", pickle.dumps(pub))
+            print(f"published: {pub}")
             return json.dumps(get_response(trans_id))
         else:
-            return {'error': 'no data sent'}
+            return {"error": "no data sent"}
 
 
 def get_response(trans_id):
@@ -149,53 +163,63 @@ class Read(Resource):
     @staticmethod
     @auth_required
     def get(text):
-        user = store.get_key(request.authorization.username,
-                             request.authorization.password)
-        name = {'user': request.authorization.username}
+        user = store.get_key(
+            request.authorization.username, request.authorization.password
+        )
+        name = {"user": request.authorization.username}
         # {req_id: {'user': user, 'type': {all: all} / {'nonce': nonce} / {hash: hash}}}
-        if text == 'all':           # reads all data in block chain
-            get = {'user': user, 'type': 'all'}
-            d = {'data': get, 'user': user,
-                 'timestamp': str(datetime.datetime.now())}
+        if text == "all":  # reads all data in block chain
+            get = {"user": user, "type": "all"}
+            d = {"data": get, "user": user, "timestamp": str(datetime.datetime.now())}
             trans_id = get_transaction_id(**d)
             client.publish(
-                f'blockchain/worker/{winner}/read', pickle.dumps({trans_id: get}))
-            print(f'read resquest sent: {d}')
+                f"blockchain/worker/{winner}/read", pickle.dumps({trans_id: get})
+            )
+            print(f"read resquest sent: {d}")
             response = get_response(trans_id)
-            if type(response).__name__ == 'list':
+            if type(response).__name__ == "list":
                 for da in response:
-                    da['date'] = str(da['date'])
+                    da["date"] = str(da["date"])
                 response.append(name)
             return json.dumps(response)
         else:
             try:
                 # converts data to dictionary
                 data = ast.literal_eval(text)
-                if type(data).__name__ == 'dict':
-                    get = {'user': user, 'type': data}
-                    d = {'data': get, 'user': user,
-                         'timestamp': str(datetime.datetime.now())}
+                if type(data).__name__ == "dict":
+                    get = {"user": user, "type": data}
+                    d = {
+                        "data": get,
+                        "user": user,
+                        "timestamp": str(datetime.datetime.now()),
+                    }
                     trans_id = get_transaction_id(**d)
                     client.publish(
-                        f'blockchain/worker/{winner}/read', pickle.dumps({trans_id: get}))
-                    print(f'read resquest sent: {d}')
+                        f"blockchain/worker/{winner}/read",
+                        pickle.dumps({trans_id: get}),
+                    )
+                    print(f"read resquest sent: {d}")
                     response = get_response(trans_id)
-                    if type(response).__name__ == 'list':
+                    if type(response).__name__ == "list":
                         for da in response:
-                            da['date'] = str(da['date'])
+                            da["date"] = str(da["date"])
                         response.append(name)
                     # reads a particular block with nonce id or hash
                     return json.dumps(response)
                 else:
-                    return json.dumps({'error': 'wrong format -> Example -> {nonce: 1} or {hash_: 127hdwu861eh}'})
+                    return json.dumps(
+                        {
+                            "error": "wrong format -> Example -> {nonce: 1} or {hash_: 127hdwu861eh}"
+                        }
+                    )
             except Exception as e:
-                return json.dumps({'error': str(e)})
+                return json.dumps({"error": str(e)})
 
 
-api.add_resource(HomePage, '/')
-api.add_resource(AddBlock, '/add/')
-api.add_resource(Read, '/read/<text>')
-api.add_resource(Register, '/register/')
+api.add_resource(HomePage, "/")
+api.add_resource(AddBlock, "/add/")
+api.add_resource(Read, "/read/<text>")
+api.add_resource(Register, "/register/")
 
 
 class BrokerSend:
@@ -215,25 +239,30 @@ class BrokerSend:
         self.client.publish(self.topic, self.data, retain=True)
 
     def __del__(self):
-        print('BrokerSend Object Deleted!')
+        print("BrokerSend Object Deleted!")
 
 
-if __name__ == '__main__':
-    print('-----------------------------------')
-    print('        BLOCK CHAIN JSON API       ')
-    print('-----------------------------------')
+if __name__ == "__main__":
+    print("-----------------------------------")
+    print("        BLOCK CHAIN JSON API       ")
+    print("-----------------------------------")
 
     username = os.getenv("BROKER_USERNAME")
     password = os.getenv("BROKER_PASSWORD")
     broker_ip = os.getenv("BROKER_IP")
     broker_port_no = int(os.getenv("BROKER_PORT"))
-    topic = 'blockchain/api/#'
-   
+    topic = "blockchain/api/#"
+
     h1 = Thread(target=broker_loop)
     h1.start()
-    bs = BrokerSend(user=username, pw=password, ip=broker_ip,
-                    sub_topic='blockchain/config', data=pickle.dumps(admin))
+    bs = BrokerSend(
+        user=username,
+        pw=password,
+        ip=broker_ip,
+        sub_topic="blockchain/config",
+        data=pickle.dumps(admin),
+    )
     bs.publish()
     del bs
-    print('admin:', admin)
-    app.run(debug=True)
+    print("admin:", admin)
+    app.run(debug=True, port=8080, host="0.0.0.0")
