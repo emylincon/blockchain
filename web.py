@@ -54,11 +54,16 @@ def writer(column, chain: QueryBlockchain):
     )
 
     init_df = pd.DataFrame({"Key": ["add key.."], "Value": ["add value.."]})
+    table_key = "table"
 
     def writer_display():
         if input_type == "json":
             df = column.data_editor(
-                init_df, num_rows="dynamic", hide_index=True, use_container_width=True
+                init_df,
+                num_rows="dynamic",
+                hide_index=True,
+                use_container_width=True,
+                key=table_key,
             )
             button = column.button(
                 label="Submit", type="primary", help="Add new block to ledger"
@@ -83,6 +88,7 @@ def writer(column, chain: QueryBlockchain):
         with st.spinner("Adding new block to chain") as spinner:
             chain.post_data(data=data)
         st.success(body="Block successfully added", icon="✅")
+        del st.session_state[table_key]
 
 
 def ledger(column, chain: QueryBlockchain):
@@ -108,7 +114,6 @@ if __name__ == "__main__":
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
     )
-    input_key = 0
     main_column = st
     sidebar = st.sidebar
     blockchain = QueryBlockchain()
