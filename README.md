@@ -11,10 +11,10 @@ Simple blockchain api implementation with login feature
 * static smart contract feature
 
 # Decentralised Implementation in the workers directory
-![High Level Architecture](workers/arch.jpg)
+![High Level Architecture](images/arch.jpg)
 ## Features
 * json request and response
-* supports read and write 
+* supports read and write
 
 # How To Use
 ## Server deployment
@@ -47,7 +47,7 @@ requests.post(url + endpoint, json=data, auth=auth)
 ```
 
 ### To read data
-* when data is added it returns the hash and nonce of the data. 
+* when data is added it returns the hash and nonce of the data.
 * this is used to read the data
 * reading can be done in two methods. reading all data or reading specific data
 
@@ -85,3 +85,6 @@ endpoint = '/readall'
 response = requests.get(url + endpoint, auth=auth)
 response.json()
 ```
+
+# Experiment data
+![High Level Architecture](images/plot_mine_time.png)
