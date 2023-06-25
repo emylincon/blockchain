@@ -86,5 +86,5 @@ response = requests.get(url + endpoint, auth=auth)
 response.json()
 ```
 
-# Experiment data
+# Experiment data
 ![High Level Architecture](images/plot_mine_time.png)
