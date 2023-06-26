@@ -104,13 +104,20 @@ def ledger(column, chain: QueryBlockchain):
     block: int = 1
     limit: int = len(ledger_data) - 2
     for data in ledger_data[:-1]:
-        column.expander(f"📦 Block {block}").json(data)
+        column.expander(f"🗳️ Block {block}").json(data)
         if block <= limit:
             column.write("⬇︎")
         block += 1
 
 
 if __name__ == "__main__":
+    # Page configuration
+    st.set_page_config(
+        page_title="Blockchain",
+        page_icon="🗳️",
+        initial_sidebar_state="auto",
+    )
+
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
     )
