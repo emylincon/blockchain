@@ -14,20 +14,29 @@ class QueryBlockchain:
 
     def get_all(self) -> list:
         endpoint = f"{self.baseURL}/read/all"
-        response = requests.get(endpoint, auth=self.admin)
+        data = []
+        try:
+            response = requests.get(endpoint, auth=self.admin)
+        except (ConnectionRefusedError, ConnectionError, requests.ConnectionError) as e:
+            logging.error(f"connection error: {e}")
+            return data
+
         try:
             data = response.json()
             if type(data).__name__ == "str":
                 data = ast.literal_eval(data)
         except Exception as e:
             logging.exception(e)
-            data = []
 
         return data
 
     def post_data(self, data) -> None:
         endpoint = f"{self.baseURL}/add/"
-        response = requests.post(endpoint, json=data, auth=self.user_auth)
+        try:
+            response = requests.post(endpoint, json=data, auth=self.user_auth)
+        except (ConnectionRefusedError, ConnectionError, requests.ConnectionError) as e:
+            logging.error(f"connection error: {e}")
+            return
         try:
             logging.info(response.json())
         except Exception as e:
@@ -37,7 +46,11 @@ class QueryBlockchain:
 
     def register(self, data) -> None:
         endpoint = f"{self.baseURL}/register/"
-        response = requests.post(endpoint, json=data, auth=self.user_auth)
+        try:
+            response = requests.post(endpoint, json=data, auth=self.user_auth)
+        except (ConnectionRefusedError, ConnectionError, requests.ConnectionError) as e:
+            logging.error(f"connection error: {e}")
+            return
         try:
             logging.info(response.json())
         except Exception as e:
