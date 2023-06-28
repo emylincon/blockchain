@@ -10,7 +10,17 @@ class QueryBlockchain:
         self.user_auth = ("jim", "pass")
         self.admin = ("admin", "admin")
         self.baseURL: str = baseURL
-        self.register(data={"user": self.user_auth[0], "pw": self.user_auth[1]})
+        self.init()
+
+    def init(self):
+        def do():
+            if self.register(
+                data={"user": self.user_auth[0], "pw": self.user_auth[1]}
+            ) in [200, 201]:
+                st.session_state["register"] = True
+
+        if not st.session_state.get("register"):
+            do()
 
     def get_all(self) -> tuple[list | int]:
         endpoint = f"{self.baseURL}/read/all"
@@ -107,7 +117,7 @@ def writer(column, chain: QueryBlockchain):
             st.success(body="Block successfully added", icon="✅")
         else:
             st.error(body="Block not added", icon="❌")
-        st.session_state.clear()
+        # st.session_state.clear()
 
 
 def ledger(column, chain: QueryBlockchain):
