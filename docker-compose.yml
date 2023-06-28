@@ -55,3 +55,15 @@ services:
         condition: service_healthy
       web-api:
         condition: service_healthy
+
+  worker3:
+    build: .
+    command: workers/worker.py
+    environment:
+      - BROKER_IP=broker
+      - BROKER_PORT=1883
+    depends_on:
+      broker:
+        condition: service_healthy
+      web-api:
+        condition: service_healthy
