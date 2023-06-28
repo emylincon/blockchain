@@ -3,6 +3,10 @@ import pandas as pd
 import requests
 import logging
 import ast
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # take environment variables from .e
 
 
 class QueryBlockchain:
@@ -154,7 +158,12 @@ if __name__ == "__main__":
     )
     main_column = st
     sidebar = st.sidebar
-    blockchain = QueryBlockchain()
+    blockchain_url: str | None = os.environ.get("BLOCKCHAIN_API")
+    if blockchain_url:
+        blockchain = QueryBlockchain(baseURL=blockchain_url)
+    else:
+        logging.error("BLOCKCHAIN_API environment variable is not set")
+        blockchain = QueryBlockchain()
 
     writer(sidebar, blockchain)
     ledger(main_column, blockchain)
