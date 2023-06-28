@@ -12,14 +12,14 @@ class QueryBlockchain:
         self.baseURL: str = baseURL
         self.register(data={"user": self.user_auth[0], "pw": self.user_auth[1]})
 
-    def get_all(self) -> list:
+    def get_all(self) -> tuple[list | int]:
         endpoint = f"{self.baseURL}/read/all"
         data = []
         try:
             response = requests.get(endpoint, auth=self.admin)
         except (ConnectionRefusedError, ConnectionError, requests.ConnectionError) as e:
             logging.error(f"connection error: {e}")
-            return data
+            return data, 500
 
         try:
             data = response.json()
@@ -28,35 +28,37 @@ class QueryBlockchain:
         except Exception as e:
             logging.exception(e)
 
-        return data
+        return data, response.status_code
 
-    def post_data(self, data) -> None:
+    def post_data(self, data) -> int:
         endpoint = f"{self.baseURL}/add/"
         try:
             response = requests.post(endpoint, json=data, auth=self.user_auth)
         except (ConnectionRefusedError, ConnectionError, requests.ConnectionError) as e:
             logging.error(f"connection error: {e}")
-            return
+            return 500
         try:
             logging.info(response.json())
         except Exception as e:
             logging.error(
                 f"Error with post data ({response.status_code}): {e} = {response.content}"
             )
+        return response.status_code
 
-    def register(self, data) -> None:
+    def register(self, data) -> int:
         endpoint = f"{self.baseURL}/register/"
         try:
             response = requests.post(endpoint, json=data, auth=self.user_auth)
         except (ConnectionRefusedError, ConnectionError, requests.ConnectionError) as e:
             logging.error(f"connection error: {e}")
-            return
+            return 500
         try:
             logging.info(response.json())
         except Exception as e:
             logging.error(
                 f"Error with post data ({response.status_code}): {e} = {response.content}"
             )
+        return response.status_code
 
 
 def writer(column, chain: QueryBlockchain):
@@ -98,14 +100,20 @@ def writer(column, chain: QueryBlockchain):
     button, data = writer_display()
     if button:
         logging.info("posting block to ledger")
+        response_code: int = 0
         with st.spinner("Adding new block to chain") as spinner:
-            chain.post_data(data=data)
-        st.success(body="Block successfully added", icon="✅")
-        del st.session_state[table_key]
+            response_code = chain.post_data(data=data)
+        if response_code in [200, 201]:
+            st.success(body="Block successfully added", icon="✅")
+        else:
+            st.error(body="Block not added", icon="❌")
+        st.session_state.clear()
 
 
 def ledger(column, chain: QueryBlockchain):
-    ledger_data = chain.get_all()
+    ledger_data, status_code = chain.get_all()
+    if status_code == 500:
+        st.error(body="Could not read from blockchain", icon="❌")
 
     column.write("# Blockchain Ledger")
     column.divider()
