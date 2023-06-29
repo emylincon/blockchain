@@ -4,13 +4,13 @@
 # Blockchain API
 Simple blockchain api implementation with login feature
 
-# Centralised Feasibility implementation on the root Directory
+# Centralised Directory
 ## Features
 * json request and response
 * supports read and write
 * static smart contract feature
 
-# Decentralised Implementation in the workers directory
+# Decentralised Implementation directory
 ![High Level Architecture](images/arch.jpg)
 ## Features
 * json request and response
