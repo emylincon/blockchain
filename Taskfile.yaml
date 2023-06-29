@@ -1,0 +1,16 @@
+# https://taskfile.dev
+
+version: "3"
+
+tasks:
+  up:
+    desc: Docker compose up
+    cmds:
+      - docker compose up
+    silent: true
+
+  down:
+    desc: Docker compose down
+    cmds:
+      - docker compose down
+    silent: true
