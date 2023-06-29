@@ -16,7 +16,7 @@ services:
 
   web-api:
     build: .
-    command: workers/distributed_api.py
+    command: distributed/api.py
     environment:
       - BROKER_IP=broker
       - BROKER_PORT=1883
@@ -34,7 +34,7 @@ services:
 
   worker1:
     build: .
-    command: workers/worker.py
+    command: distributed/worker.py
     environment:
       - BROKER_IP=broker
       - BROKER_PORT=1883
@@ -46,7 +46,7 @@ services:
 
   worker2:
     build: .
-    command: workers/worker.py
+    command: distributed/worker.py
     environment:
       - BROKER_IP=broker
       - BROKER_PORT=1883
@@ -58,7 +58,7 @@ services:
 
   worker3:
     build: .
-    command: workers/worker.py
+    command: distributed/worker.py
     environment:
       - BROKER_IP=broker
       - BROKER_PORT=1883

@@ -6,11 +6,17 @@ tasks:
   up:
     desc: Docker compose up
     cmds:
-      - docker compose up
+      - docker compose up -d
     silent: true
 
   down:
     desc: Docker compose down
     cmds:
       - docker compose down
+    silent: true
+
+  build:
+    desc: Compose build
+    cmds:
+      - docker compose build
     silent: true

@@ -40,4 +40,3 @@ class Data:             # this class stores registered user data
     @staticmethod
     def gen_secret():
         return random.randint(111111111111111111111, 1111111111111111111111111111111111)
-
