@@ -7,6 +7,7 @@ from threading import Thread
 import os
 import time
 import platform
+from dotenv import load_dotenv
 
 # mosquitto_pub -h localhost -t test -u admin -P password -n -r -d
 
@@ -14,42 +15,12 @@ import platform
 # blockchain/worker/worker_id/read, blockchain/worker/config
 
 # blockchain/api/block_winner, blockchain/api/notification,
-if platform.system() == "Windows":
-    os.system("cls")
-else:
-    os.system("clear")
-
-print("-----------------------------------")
-print("           MINER / WORKER          ")
-print("-----------------------------------")
-
-username = os.getenv("BROKER_USERNAME")
-password = os.getenv("BROKER_PASSWORD")
-broker_ip = os.getenv("BROKER_IP")
-broker_port_no = int(os.getenv("BROKER_PORT"))
-topic = "blockchain/worker/#"
-print("-----------------------------------")
-chain = []
-add_chain = (
-    {}
-)  # {tran_id: [{(worker_id, work_time):{data, time, user, nonce, hash}}, ], }
-mine_data = {}  # {tran_id: {data, time, user}...}
-times = {}  # {tran_id: {w1: time, w2: time}, ...}
-vote_poll = {}  # {tran_id: {votes:{worker_id: vote_amt..}, voters:set()}}
-read_request = (
-    {}
-)  # {req_id: {'user': user, 'type': {all:all}/{'nonce': nonce}/{hash: hash}}}
-block_winners = []
-client = mqtt.Client()
 
 
 def ip_address():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
     return s.getsockname()[0]
-
-
-worker_id = ip_address()
 
 
 def on_connect(connect_client, userdata, flags, rc):
@@ -265,9 +236,11 @@ class BlockChain:
                             "info": "block added successfully",
                             "nonce": new["nonce"],
                             "hash": new["hash"],
+                            "times": times.get(trans_id),
                         }
                     }
                     client.publish("blockchain/api/notification", pickle.dumps(notify))
+                    print("\n\nTimes: ", times.get(trans_id), "\n\n")
                 clean.append(trans_id)
                 break
 
@@ -446,9 +419,6 @@ def initialization():
     block_chain = BlockChain(super_user)  # initializing block chain
 
 
-clean = []
-
-
 def check_mine_request():
     while True:
         if len(mine_data) > 0:
@@ -505,6 +475,36 @@ def main():
 
 
 if __name__ == "__main__":
+    load_dotenv()  # take environment variables from .env
+    if platform.system() == "Windows":
+        os.system("cls")
+    else:
+        os.system("clear")
+
+    print("-----------------------------------")
+    print("           MINER / WORKER          ")
+    print("-----------------------------------")
+
+    username = os.getenv("BROKER_USERNAME")
+    password = os.getenv("BROKER_PASSWORD")
+    broker_ip = os.getenv("BROKER_IP")
+    broker_port_no = int(os.getenv("BROKER_PORT"))
+    topic = "blockchain/worker/#"
+    print("-----------------------------------")
+    chain = []
+    add_chain = (
+        {}
+    )  # {tran_id: [{(worker_id, work_time):{data, time, user, nonce, hash}}, ], }
+    mine_data = {}  # {tran_id: {data, time, user}...}
+    times = {}  # {tran_id: {w1: time, w2: time}, ...}
+    vote_poll = {}  # {tran_id: {votes:{worker_id: vote_amt..}, voters:set()}}
+    read_request = (
+        {}
+    )  # {req_id: {'user': user, 'type': {all:all}/{'nonce': nonce}/{hash: hash}}}
+    block_winners = []
+    client = mqtt.Client()
+    clean = []
+    worker_id = ip_address()
     main()
 
 # b = BlockChain()
