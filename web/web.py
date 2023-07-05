@@ -22,7 +22,7 @@ class QueryBlockchain:
             code = self.register(
                 data={"user": self.user_auth[0], "pw": self.user_auth[1]}
             )
-            print("register code: ", code)
+            logging.info(f"register code: {code}")
             if code in [200, 201]:
                 st.session_state["register"] = True
 
