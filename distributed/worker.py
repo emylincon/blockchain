@@ -9,13 +9,6 @@ import time
 import platform
 from dotenv import load_dotenv
 
-# mosquitto_pub -h localhost -t test -u admin -P password -n -r -d
-
-# blockchain/worker/chain, blockchain/worker/mine, blockchain/worker/add, blockchain/worker/times,
-# blockchain/worker/worker_id/read, blockchain/worker/config
-
-# blockchain/api/block_winner, blockchain/api/notification,
-
 
 def ip_address():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -231,12 +224,13 @@ class BlockChain:
                         "blockchain/worker/chain", pickle.dumps(self.chain), retain=True
                     )
                     new = self.get_last_block().block_info()
+                    trans_times = {k: str(v) for k, v in times.get(trans_id).items()}
                     notify = {
                         trans_id: {
                             "info": "block added successfully",
                             "nonce": new["nonce"],
                             "hash": new["hash"],
-                            "times": times.get(trans_id),
+                            "times": trans_times,
                         }
                     }
                     client.publish("blockchain/api/notification", pickle.dumps(notify))
