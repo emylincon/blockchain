@@ -55,9 +55,7 @@ class QueryBlockchain:
             logging.error(f"connection error: {e}")
             return 500
         try:
-            # logging.info("mine_response", response.json())
             json_res = response.json()
-            logging.info(f"type: {type(json_res).__name__}")
             logging.info(f"mine_response, {json_res}")
         except Exception as e:
             logging.error(
