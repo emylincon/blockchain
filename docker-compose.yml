@@ -67,7 +67,6 @@ services:
         condition: service_healthy
       web-api:
         condition: service_healthy
-
   web:
     build:
       context: ./web/

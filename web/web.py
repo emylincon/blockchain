@@ -4,6 +4,7 @@ import requests
 import logging
 import ast
 import os
+import json
 from dotenv import load_dotenv
 
 load_dotenv()  # take environment variables from .e
@@ -18,9 +19,11 @@ class QueryBlockchain:
 
     def init(self):
         def do():
-            if self.register(
+            code = self.register(
                 data={"user": self.user_auth[0], "pw": self.user_auth[1]}
-            ) in [200, 201]:
+            )
+            print("register code: ", code)
+            if code in [200, 201]:
                 st.session_state["register"] = True
 
         if not st.session_state.get("register"):
@@ -52,7 +55,10 @@ class QueryBlockchain:
             logging.error(f"connection error: {e}")
             return 500
         try:
-            logging.info(response.json())
+            # logging.info("mine_response", response.json())
+            json_res = response.json()
+            logging.info(f"type: {type(json_res).__name__}")
+            logging.info(f"mine_response, {json_res}")
         except Exception as e:
             logging.error(
                 f"Error with post data ({response.status_code}): {e} = {response.content}"
@@ -74,6 +80,12 @@ class QueryBlockchain:
             )
         return response.status_code
 
+def get_times_column_data(data: str) -> pd.DataFrame:
+    json_data = json.loads(data)
+    df = pd.DataFrame({"Workers":list(json_data.keys()), "Times": list(json_data.values())})
+    df.sort_values(by="Times", inplace=True)
+    df["Winner"] = ["👑"] + ["😵" for _ in range(df.last_valid_index())]
+    return df
 
 def writer(column, chain: QueryBlockchain):
     column.write("# Blockchain Writer")

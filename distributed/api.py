@@ -15,14 +15,6 @@ from dotenv import load_dotenv
 
 load_dotenv()  # take environment variables from .env
 
-# cd home/ ; git clone https://github.com/emylincon/blockchain ; cd blockchain/workers
-
-# blockchain/worker/chain, blockchain/worker/mine, blockchain/worker/add, blockchain/worker/times,
-# blockchain/worker/worker_id/read
-
-# blockchain/api/block_winner, blockchain/api/notification,
-
-
 app = Flask(__name__)
 api = Api(app)  # initializing app
 store = Data()  # initializing user data
@@ -73,10 +65,13 @@ def auth_required(f):  # user verification authentication
             if auth:
                 if store.verify(store.get_key(auth.username, auth.password)):
                     return f(*args, **kwargs)
-
-            return json.dumps({"error": "could not verify login"})
-        except Exception:
-            return json.dumps({"error": "could not verify login"})
+                else:
+                    return json.dumps({"error": "could not verify login"})
+            else:
+                return json.dumps({"error": "authentication was not parsed"})
+        except Exception as e:
+            print("login error", e)
+            return json.dumps({"error": "error during login", "e": str(e)})
 
     return decorated
 
@@ -146,7 +141,12 @@ class AddBlock(Resource):
             pub = {trans_id: mine}
             client.publish("blockchain/worker/mine", pickle.dumps(pub))
             print(f"published: {pub}")
-            return json.dumps(get_response(trans_id))
+            try:
+                return json.dumps(get_response(trans_id))
+            except TypeError:
+                return {
+                    "error": "json.dumps(get_response(trans_id)) raised a type error"
+                }
         else:
             return {"error": "no data sent"}
 

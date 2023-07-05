@@ -20,3 +20,10 @@ tasks:
     cmds:
       - docker compose build
     silent: true
+
+  reup:
+    desc: Down, build, Up
+    cmds:
+      - task: down
+      - task: build
+      - task: up
