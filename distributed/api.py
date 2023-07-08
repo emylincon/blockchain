@@ -22,6 +22,7 @@ admin = store.get_key(**config.test)  # creating super user
 winner = ""
 notify = {}  # id : data
 client = mqtt.Client()
+times = {}
 
 
 def on_connect(connect_client, userdata, flags, rc):
@@ -127,6 +128,7 @@ class AddBlock(Resource):
     @staticmethod
     @auth_required
     def post():
+        global times
         user = store.get_key(
             request.authorization.username, request.authorization.password
         )
@@ -142,13 +144,18 @@ class AddBlock(Resource):
             client.publish("blockchain/worker/mine", pickle.dumps(pub))
             print(f"published: {pub}")
             try:
-                return json.dumps(get_response(trans_id))
+                response = get_response(trans_id)
+                print(f"times: {response}, type: {type(response)}")
+                times_data = response.get("times")
+                if times_data:
+                    times = times_data
+                return json.dumps(response)
             except TypeError:
-                return {
-                    "error": "json.dumps(get_response(trans_id)) raised a type error"
-                }
+                return json.dumps(
+                    {"error": "json.dumps(get_response(trans_id)) raised a type error"}
+                )
         else:
-            return {"error": "no data sent"}
+            return json.dumps({"error": "no data sent"})
 
 
 def get_response(trans_id):
@@ -216,10 +223,18 @@ class Read(Resource):
                 return json.dumps({"error": str(e)})
 
 
+class Times(Resource):
+    @staticmethod
+    @auth_required
+    def get():
+        return json.dumps(times)
+
+
 api.add_resource(HomePage, "/")
 api.add_resource(AddBlock, "/add/")
 api.add_resource(Read, "/read/<text>")
 api.add_resource(Register, "/register/")
+api.add_resource(Times, "/times/")
 
 
 class BrokerSend:

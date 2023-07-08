@@ -7,7 +7,7 @@ import os
 import json
 from dotenv import load_dotenv
 
-load_dotenv()  # take environment variables from .e
+load_dotenv()  # take environment variables from .env
 
 
 class QueryBlockchain:
@@ -48,6 +48,7 @@ class QueryBlockchain:
         return data, response.status_code
 
     def post_data(self, data) -> int:
+        global df_winners
         endpoint = f"{self.baseURL}/add/"
         try:
             response = requests.post(endpoint, json=data, auth=self.user_auth)
@@ -74,16 +75,56 @@ class QueryBlockchain:
             logging.info(response.json())
         except Exception as e:
             logging.error(
-                f"Error with post data ({response.status_code}): {e} = {response.content}"
+                f"Error register ({response.status_code}): {e} = {response.content}"
             )
         return response.status_code
 
-def get_times_column_data(data: str) -> pd.DataFrame:
-    json_data = json.loads(data)
-    df = pd.DataFrame({"Workers":list(json_data.keys()), "Times": list(json_data.values())})
-    df.sort_values(by="Times", inplace=True)
-    df["Winner"] = ["👑"] + ["😵" for _ in range(df.last_valid_index())]
-    return df
+    def times(self):
+        endpoint = f"{self.baseURL}/times/"
+        data = {}
+        try:
+            response = requests.get(endpoint, auth=self.user_auth)
+        except (ConnectionRefusedError, ConnectionError, requests.ConnectionError) as e:
+            logging.error(f"connection error: {e}")
+            return self.get_times_column_data(json_data=data), 500
+        try:
+            json_res = response.json()
+            if type(json_res).__name__ == "str":
+                json_res = json.loads(json_res)
+            logging.info(f"times: {json_res}, {type(json_res)}")
+        except Exception as e:
+            logging.error(f"times error: {e}")
+            return self.get_times_column_data(json_data=data), 500
+
+        return self.get_times_column_data(json_data=json_res), response.status_code
+
+    @staticmethod
+    def get_times_column_data(json_data: dict) -> pd.DataFrame:
+        default = pd.DataFrame({"Workers": [], "Times": [], "Winner": []})
+        if len(json_data) == 0:
+            return default
+        input_dict = {
+            "Workers": list(json_data.keys()),
+            "Times": list(json_data.values()),
+        }
+        logging.info(f"input_dict: {input_dict}")
+        df = pd.DataFrame(input_dict)
+        try:
+            df.sort_values(by="Times", inplace=True)
+        except Exception as e:
+            logging.error(f"Error sorting times: {e}, {df.to_dict()}")
+            return default
+        df["Winner"] = ["👑"] + ["😵" for _ in range(df.last_valid_index())]
+        return df
+
+
+def winner_display(column, chain: QueryBlockchain):
+    data, code = chain.times()
+
+    logging.info(f"wins: {len(data)}, code: {code}")
+
+    column.write(data)
+
 
 def writer(column, chain: QueryBlockchain):
     column.write("# Blockchain Writer")
@@ -139,9 +180,6 @@ def ledger(column, chain: QueryBlockchain):
     if status_code == 500:
         st.error(body="Could not read from blockchain", icon="❌")
 
-    column.write("# Blockchain Ledger")
-    column.divider()
-
     if len(ledger_data) == 0:
         column.write("🚫:red[No data in ledge]🚫")
         return
@@ -161,12 +199,18 @@ if __name__ == "__main__":
         page_title="Blockchain",
         page_icon="🗳️",
         initial_sidebar_state="auto",
+        layout="wide",
     )
 
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
     )
-    main_column = st
+    st.write("# Blockchain Ledger")
+    st.divider()
+
+    df_winners = pd.DataFrame({"Workers": [], "Times": [], "Winner": []})
+    ledger_col, winner_col = st.columns([3, 1])
+    # main_column = st
     sidebar = st.sidebar
     blockchain_url: str | None = os.environ.get("BLOCKCHAIN_API")
     if blockchain_url:
@@ -174,6 +218,7 @@ if __name__ == "__main__":
     else:
         logging.error("BLOCKCHAIN_API environment variable is not set")
         blockchain = QueryBlockchain()
-
+    st.write()
     writer(sidebar, blockchain)
-    ledger(main_column, blockchain)
+    ledger(ledger_col, blockchain)
+    winner_display(winner_col, blockchain)

@@ -27,3 +27,10 @@ tasks:
       - task: down
       - task: build
       - task: up
+    silent: false
+
+  prune:
+    desc: Builder prune
+    cmds:
+      - docker builder prune
+    silent: true
