@@ -1,13 +1,17 @@
 import hashlib
 import random
-import config
+import os
+import sys
+from dotenv import load_dotenv
+import logging
 
 
-class Data:             # this class stores registered user data
+class Data:  # this class stores registered user data
     def __init__(self):
         self.data = {}
         self.secret = self.gen_secret
-        self.add_item(**config.test)        # adds admin user for testing
+        self.creds = self.__get_creds()
+        self.add_item(**self.creds)
 
     def add_item(self, user, pw):
         key = self.get_key(user, pw)
@@ -16,6 +20,14 @@ class Data:             # this class stores registered user data
         else:
             self.data[key] = user
             return 1
+
+    def __get_creds(self) -> dict:
+        user = os.getenv("API_ADMIN_USER")
+        password = os.get("API_ADMIN_USER_PASSWORD")
+        if user is None or password is None:
+            logging.error("API_ADMIN_USER / API_ADMIN_USER_PASSWORD ENV is not set")
+            sys.exit(1)
+        return {"user": user, "pw": password}
 
     def delete_item(self, key):
         del self.data[key]
@@ -31,9 +43,9 @@ class Data:             # this class stores registered user data
     def get_key(self, user, pw):
         h = hashlib.sha256()
         h.update(
-            str(user).encode('utf-8') +
-            str(pw).encode('utf-8') +
-            str(self.secret).encode('utf-8')
+            str(user).encode("utf-8")
+            + str(pw).encode("utf-8")
+            + str(self.secret).encode("utf-8")
         )
         return h.hexdigest()
 

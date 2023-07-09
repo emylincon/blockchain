@@ -85,6 +85,15 @@ endpoint = '/readall'
 response = requests.get(url + endpoint, auth=auth)
 response.json()
 ```
-
+### Example .env file
+```bash
+BROKER_IP=localhost
+BROKER_PORT=1883
+BROKER_USERNAME=admin
+BROKER_PASSWORD=password
+BLOCKCHAIN_API=http://localhost:8080
+API_ADMIN_USER=admin
+API_ADMIN_USER_PASSWORD=admin
+```
 # Experiment data
 ![High Level Architecture](images/plot_mine_time.png)
