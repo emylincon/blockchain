@@ -23,7 +23,7 @@ class Data:  # this class stores registered user data
 
     def __get_creds(self) -> dict:
         user = os.getenv("API_ADMIN_USER")
-        password = os.get("API_ADMIN_USER_PASSWORD")
+        password = os.getenv("API_ADMIN_USER_PASSWORD")
         if user is None or password is None:
             logging.error("API_ADMIN_USER / API_ADMIN_USER_PASSWORD ENV is not set")
             sys.exit(1)
