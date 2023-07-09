@@ -4,25 +4,15 @@ import ast
 import json
 from users import Data
 from functools import wraps
-import config
 import pickle
 import paho.mqtt.client as mqtt
 import hashlib
 import datetime
 from threading import Thread
 import os
+import sys
+import logging
 from dotenv import load_dotenv
-
-load_dotenv()  # take environment variables from .env
-
-app = Flask(__name__)
-api = Api(app)  # initializing app
-store = Data()  # initializing user data
-admin = store.get_key(**config.test)  # creating super user
-winner = ""
-notify = {}  # id : data
-client = mqtt.Client()
-times = {}
 
 
 def on_connect(connect_client, userdata, flags, rc):
@@ -113,17 +103,6 @@ class Register(Resource):  # Registration resource
             )
 
 
-def get_transaction_id(data, user, timestamp):
-    h = hashlib.sha256()
-    h.update(
-        str(data).encode("utf-8")
-        + str(user).encode("utf-8")
-        + str(timestamp).encode("utf-8")
-    )
-
-    return h.hexdigest()
-
-
 class AddBlock(Resource):
     @staticmethod
     @auth_required
@@ -139,12 +118,12 @@ class AddBlock(Resource):
                 "user": user,
                 "timestamp": datetime.datetime.now(),
             }
-            trans_id = get_transaction_id(**mine)
+            trans_id = Util.get_transaction_id(**mine)
             pub = {trans_id: mine}
             client.publish("blockchain/worker/mine", pickle.dumps(pub))
             print(f"published: {pub}")
             try:
-                response = get_response(trans_id)
+                response = Util.get_response(trans_id)
                 print(f"times: {response}, type: {type(response)}")
                 times_data = response.get("times")
                 if times_data:
@@ -158,12 +137,34 @@ class AddBlock(Resource):
             return json.dumps({"error": "no data sent"})
 
 
-def get_response(trans_id):
-    while True:
-        if trans_id in notify:
-            response = notify[trans_id]
-            del notify[trans_id]
-            return response
+class Util:
+    @staticmethod
+    def get_creds() -> dict:
+        user = os.getenv("API_ADMIN_USER")
+        password = os.getenv("API_ADMIN_USER_PASSWORD")
+        if user is None or password is None:
+            logging.error("API_ADMIN_USER / API_ADMIN_USER_PASSWORD ENV is not set")
+            sys.exit(1)
+        return {"user": user, "pw": password}
+
+    @staticmethod
+    def get_response(trans_id):
+        while True:
+            if trans_id in notify:
+                response = notify[trans_id]
+                del notify[trans_id]
+                return response
+
+    @staticmethod
+    def get_transaction_id(data, user, timestamp):
+        h = hashlib.sha256()
+        h.update(
+            str(data).encode("utf-8")
+            + str(user).encode("utf-8")
+            + str(timestamp).encode("utf-8")
+        )
+
+        return h.hexdigest()
 
 
 class Read(Resource):
@@ -178,12 +179,12 @@ class Read(Resource):
         if text == "all":  # reads all data in block chain
             get = {"user": user, "type": "all"}
             d = {"data": get, "user": user, "timestamp": str(datetime.datetime.now())}
-            trans_id = get_transaction_id(**d)
+            trans_id = Util.get_transaction_id(**d)
             client.publish(
                 f"blockchain/worker/{winner}/read", pickle.dumps({trans_id: get})
             )
             print(f"read resquest sent: {d}")
-            response = get_response(trans_id)
+            response = Util.get_response(trans_id)
             if type(response).__name__ == "list":
                 for da in response:
                     da["date"] = str(da["date"])
@@ -200,13 +201,13 @@ class Read(Resource):
                         "user": user,
                         "timestamp": str(datetime.datetime.now()),
                     }
-                    trans_id = get_transaction_id(**d)
+                    trans_id = Util.get_transaction_id(**d)
                     client.publish(
                         f"blockchain/worker/{winner}/read",
                         pickle.dumps({trans_id: get}),
                     )
                     print(f"read resquest sent: {d}")
-                    response = get_response(trans_id)
+                    response = Util.get_response(trans_id)
                     if type(response).__name__ == "list":
                         for da in response:
                             da["date"] = str(da["date"])
@@ -228,13 +229,6 @@ class Times(Resource):
     @auth_required
     def get():
         return json.dumps(times)
-
-
-api.add_resource(HomePage, "/")
-api.add_resource(AddBlock, "/add/")
-api.add_resource(Read, "/read/<text>")
-api.add_resource(Register, "/register/")
-api.add_resource(Times, "/times/")
 
 
 class BrokerSend:
@@ -262,12 +256,35 @@ if __name__ == "__main__":
     print("        BLOCK CHAIN JSON API       ")
     print("-----------------------------------")
 
+    # Setup logging
+    logging.basicConfig(
+        format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
+    )
+
+    # Set up GLOBAL variables
+    load_dotenv()  # take environment variables from .env
     username = os.getenv("BROKER_USERNAME")
     password = os.getenv("BROKER_PASSWORD")
     broker_ip = os.getenv("BROKER_IP")
     broker_port_no = int(os.getenv("BROKER_PORT"))
     topic = "blockchain/api/#"
+    store = Data()  # initializing user data
+    admin = store.get_key(**Util.get_creds())  # creating super user
+    winner = ""
+    notify = {}  # id : data
+    client = mqtt.Client()
+    times = {}
 
+    # Flask API set up
+    app = Flask(__name__)
+    api = Api(app)  # initializing app
+    api.add_resource(HomePage, "/")
+    api.add_resource(AddBlock, "/add/")
+    api.add_resource(Read, "/read/<text>")
+    api.add_resource(Register, "/register/")
+    api.add_resource(Times, "/times/")
+
+    # Start threads
     h1 = Thread(target=broker_loop)
     h1.start()
     bs = BrokerSend(
@@ -279,5 +296,4 @@ if __name__ == "__main__":
     )
     bs.publish()
     del bs
-    print("admin:", admin)
     app.run(debug=True, port=8080, host="0.0.0.0")
