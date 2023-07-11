@@ -11,4 +11,4 @@ RUN apt update && apt install -y netcat curl && \
 
 ENTRYPOINT [ "python" ]
 
-CMD ["workers/distributed_api.py"]
+CMD ["distributed/api.py"]
