@@ -9,6 +9,7 @@ import logging
 class Data:  # this class stores registered user data
     def __init__(self):
         self.data = {}
+        load_dotenv()
         self.secret = self.gen_secret
         self.creds = self.__get_creds()
         self.add_item(**self.creds)

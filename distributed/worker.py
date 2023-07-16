@@ -8,6 +8,26 @@ import os
 import time
 import platform
 from dotenv import load_dotenv
+from tinydb import TinyDB, Query
+
+
+class DB:
+    def __init__(self):
+        self.db = TinyDB("db.json")
+        self.chain = self.db.table("chain")
+
+    def append(self, data):
+        self.chain.insert(data)
+
+    def all(self):
+        return self.chain.all()
+
+    def __len__(self):
+        return len(self.chain)
+
+    def set(self, chain: list):
+        for block in chain:
+            self.append(block)
 
 
 def ip_address():
@@ -24,12 +44,12 @@ def on_connect(connect_client, userdata, flags, rc):
 
 # Callback Function on Receiving the Subscribed Topic/Message
 def on_message(message_client, userdata, msg):
-    global chain
     # print the message received from the subscribed topic
     print(f"Topic received: {msg.topic}")
     topic_recv = msg.topic
     if (len(chain) == 0) and (topic_recv == "blockchain/worker/chain"):
         chain = pickle.loads(msg.payload)
+        db.set(chain)
         print(f"chain received: {chain}")
     elif topic_recv == "blockchain/worker/mine":  # mine request is sent by web api
         data = pickle.loads(msg.payload)
@@ -139,7 +159,6 @@ class BlockChain:
     def __init__(self, admin):
         self.diff = 4  # diff is set to 4, diff controls how easy it is to mine a block
         self.max_nonce = 2**32  # the max nonce that a block can have
-        self.chain = chain
         self.admin = admin
         self.con_id = 1  # contract id
         self.verified_claims = {}  # id : {}
@@ -153,7 +172,7 @@ class BlockChain:
             "previous_hash": "0x0",
             "timestamp": str(datetime.datetime.now()),
         }
-        if len(self.chain) == 0:
+        if len(db) == 0:
             for i in range(self.max_nonce):
                 if self.get_hash(user=admin, **data)[: self.diff] == self.diff_string:
                     self.chain.append(Block(user=admin, **data))
@@ -485,7 +504,8 @@ if __name__ == "__main__":
     broker_port_no = int(os.getenv("BROKER_PORT"))
     topic = "blockchain/worker/#"
     print("-----------------------------------")
-    chain = []
+    db = DB()
+    # chain = []
     add_chain = (
         {}
     )  # {tran_id: [{(worker_id, work_time):{data, time, user, nonce, hash}}, ], }
