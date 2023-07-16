@@ -10,84 +10,80 @@ import platform
 from dotenv import load_dotenv
 
 
-def ip_address():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("8.8.8.8", 80))
-    return s.getsockname()[0]
+class BrokerCom:
+    @staticmethod
+    def on_connect(connect_client, userdata, flags, rc):
+        print("Connected with Code :" + str(rc))
+        # Subscribe Topic from here
+        connect_client.subscribe(topic)
 
+    # Callback Function on Receiving the Subscribed Topic/Message
+    @staticmethod
+    def on_message(message_client, userdata, msg):
+        global chain
+        # print the message received from the subscribed topic
+        print(f"Topic received: {msg.topic}")
+        topic_recv = msg.topic
+        if (len(chain) == 0) and (topic_recv == "blockchain/worker/chain"):
+            chain = pickle.loads(msg.payload)
+            print(f"chain received: {chain}")
+        elif topic_recv == "blockchain/worker/mine":  # mine request is sent by web api
+            data = pickle.loads(msg.payload)
+            mine_data.update(data)
+        elif topic_recv == "blockchain/worker/add":  # this is sent by workers
+            add_data = pickle.loads(msg.payload)  # [worker_id, {data}, trans_id]
+            # print('add recieved:', add_data)
+            if add_data[0] != worker_id and (add_data[2] in add_chain):
+                time_ = datetime.datetime.now()
+                add_chain[add_data[2]].append({(add_data[0], time_): add_data[1]})
+                verify = [
+                    add_data[0],
+                    add_data[1],
+                    add_data[2],
+                    time_,
+                ]  # # [worker_id, {data}, trans_id, time]
+                # print('add: ', verify)
+                if verify:
+                    # print('not none: ', verify)
+                    block_chain.check_claim(verify)
+            elif add_data[0] != worker_id and (add_data[2] not in add_chain):
+                time_ = datetime.datetime.now()
+                add_chain[add_data[2]] = [{(add_data[0], time_): add_data[1]}]
+                verify = [
+                    add_data[0],
+                    add_data[1],
+                    add_data[2],
+                    time_,
+                ]  # # [worker_id, {data}, trans_id, time]
+                # print('add: ', verify)
+                if verify:
+                    # print('not none: ', verify)
+                    block_chain.check_claim(verify)
+        elif (
+            topic_recv == "blockchain/worker/vote"
+        ):  # [tran_id, worker_id, who_vote_is_for]
+            recv = pickle.loads(msg.payload)
+            if recv[0] in vote_poll:
+                vote_dict = vote_poll[recv[0]]
+                if recv[1] not in vote_dict["voters"]:
+                    vote_dict["voters"].add(recv[1])
+                    if recv[2] not in vote_dict["votes"]:
+                        vote_dict["votes"][recv[2]] = 1
+                    else:
+                        vote_dict["votes"][recv[2]] += 1
+            else:
+                vote_poll[recv[0]] = {"votes": {recv[2]: 1}, "voters": {recv[1]}}
+        elif msg.topic == f"blockchain/worker/{worker_id}/read":
+            read_request.update(pickle.loads(msg.payload))
 
-def on_connect(connect_client, userdata, flags, rc):
-    print("Connected with Code :" + str(rc))
-    # Subscribe Topic from here
-    connect_client.subscribe(topic)
+    @staticmethod
+    def broker_loop():
+        client.on_connect = BrokerCom.on_connect
+        client.on_message = BrokerCom.on_message
 
-
-# Callback Function on Receiving the Subscribed Topic/Message
-def on_message(message_client, userdata, msg):
-    global chain
-    # print the message received from the subscribed topic
-    print(f"Topic received: {msg.topic}")
-    topic_recv = msg.topic
-    if (len(chain) == 0) and (topic_recv == "blockchain/worker/chain"):
-        chain = pickle.loads(msg.payload)
-        print(f"chain received: {chain}")
-    elif topic_recv == "blockchain/worker/mine":  # mine request is sent by web api
-        data = pickle.loads(msg.payload)
-        mine_data.update(data)
-    elif topic_recv == "blockchain/worker/add":  # this is sent by workers
-        add_data = pickle.loads(msg.payload)  # [worker_id, {data}, trans_id]
-        # print('add recieved:', add_data)
-        if add_data[0] != worker_id and (add_data[2] in add_chain):
-            time_ = datetime.datetime.now()
-            add_chain[add_data[2]].append({(add_data[0], time_): add_data[1]})
-            verify = [
-                add_data[0],
-                add_data[1],
-                add_data[2],
-                time_,
-            ]  # # [worker_id, {data}, trans_id, time]
-            # print('add: ', verify)
-            if verify:
-                # print('not none: ', verify)
-                block_chain.check_claim(verify)
-        elif add_data[0] != worker_id and (add_data[2] not in add_chain):
-            time_ = datetime.datetime.now()
-            add_chain[add_data[2]] = [{(add_data[0], time_): add_data[1]}]
-            verify = [
-                add_data[0],
-                add_data[1],
-                add_data[2],
-                time_,
-            ]  # # [worker_id, {data}, trans_id, time]
-            # print('add: ', verify)
-            if verify:
-                # print('not none: ', verify)
-                block_chain.check_claim(verify)
-    elif (
-        topic_recv == "blockchain/worker/vote"
-    ):  # [tran_id, worker_id, who_vote_is_for]
-        recv = pickle.loads(msg.payload)
-        if recv[0] in vote_poll:
-            vote_dict = vote_poll[recv[0]]
-            if recv[1] not in vote_dict["voters"]:
-                vote_dict["voters"].add(recv[1])
-                if recv[2] not in vote_dict["votes"]:
-                    vote_dict["votes"][recv[2]] = 1
-                else:
-                    vote_dict["votes"][recv[2]] += 1
-        else:
-            vote_poll[recv[0]] = {"votes": {recv[2]: 1}, "voters": {recv[1]}}
-    elif msg.topic == f"blockchain/worker/{worker_id}/read":
-        read_request.update(pickle.loads(msg.payload))
-
-
-def broker_loop():
-    client.on_connect = on_connect
-    client.on_message = on_message
-
-    # client.username_pw_set(username, password)
-    client.connect(broker_ip, broker_port_no, 60)
-    client.loop_forever()
+        # client.username_pw_set(username, password)
+        client.connect(broker_ip, broker_port_no, 60)
+        client.loop_forever()
 
 
 class Block:
@@ -402,64 +398,81 @@ class BrokerRequest:
         print("BrokerRequest Object Deleted!")
 
 
-def initialization():
-    global block_chain
-    br = BrokerRequest(
-        user=username, pw=password, ip=broker_ip, sub_topic="blockchain/config"
-    )
-    super_user = br.broker_loop()
-    del br
-    print("admin: ", super_user)
-    block_chain = BlockChain(super_user)  # initializing block chain
+class Util:
+    @staticmethod
+    def initialization():
+        br = BrokerRequest(
+            user=username, pw=password, ip=broker_ip, sub_topic="blockchain/config"
+        )
+        super_user = br.broker_loop()
+        del br
+        print("admin: ", super_user)
+        block_chain = BlockChain(super_user)  # initializing block chain
+        return block_chain
 
+    @staticmethod
+    def check_mine_request():
+        while True:
+            if len(mine_data) > 0:
+                for trans in mine_data:
+                    block_chain.add_block(**mine_data[trans])
+                print("cleaning...")
+                for i in clean:
+                    cleanup(i)
+                print("done!")
 
-def check_mine_request():
-    while True:
-        if len(mine_data) > 0:
-            for trans in mine_data:
-                block_chain.add_block(**mine_data[trans])
-            print("cleaning...")
-            for i in clean:
-                cleanup(i)
-            print("done!")
+    @staticmethod
+    def ip_address() -> str:
+        hostname = socket.gethostname()
+        ip_addr = socket.gethostbyname(hostname)
+        return ip_addr
 
-
-def check_read_request():
-    while True:
-        if len(read_request) > 0:
-            remove = []
-            for (
-                req_id
-            ) in (
-                read_request
-            ):  # {req_id: {'user': user, 'type': all/{'nonce': nonce}/{hash: hash}}}
-                data = read_request[req_id]
-                if data["type"] == "all":
-                    notify = {req_id: block_chain.read_all(data["user"])}
-                    client.publish("blockchain/api/notification", pickle.dumps(notify))
-                    remove.append(req_id)
-                elif list(data["type"].keys())[0] in ["nonce", "hash"]:
-                    notify = {
-                        req_id: block_chain.read_block(data["user"], **data["type"])
-                    }
-                    client.publish("blockchain/api/notification", pickle.dumps(notify))
-                    remove.append(req_id)
-                else:
-                    notify = {req_id: {"error": "an error occurred in read_request"}}
-                    client.publish("blockchain/api/notification", pickle.dumps(notify))
-                    remove.append(req_id)
-            for req_id in remove:
-                del read_request[req_id]
+    @staticmethod
+    def check_read_request():
+        while True:
+            if len(read_request) > 0:
+                remove = []
+                for (
+                    req_id
+                ) in (
+                    read_request
+                ):  # {req_id: {'user': user, 'type': all/{'nonce': nonce}/{hash: hash}}}
+                    data = read_request[req_id]
+                    if data["type"] == "all":
+                        notify = {req_id: block_chain.read_all(data["user"])}
+                        client.publish(
+                            "blockchain/api/notification", pickle.dumps(notify)
+                        )
+                        remove.append(req_id)
+                    elif list(data["type"].keys())[0] in ["nonce", "hash"]:
+                        notify = {
+                            req_id: block_chain.read_block(data["user"], **data["type"])
+                        }
+                        client.publish(
+                            "blockchain/api/notification", pickle.dumps(notify)
+                        )
+                        remove.append(req_id)
+                    else:
+                        notify = {
+                            req_id: {"error": "an error occurred in read_request"}
+                        }
+                        client.publish(
+                            "blockchain/api/notification", pickle.dumps(notify)
+                        )
+                        remove.append(req_id)
+                for req_id in remove:
+                    del read_request[req_id]
 
 
 def main():
+    global block_chain
     try:
-        h1 = Thread(target=broker_loop)
+        h1 = Thread(target=BrokerCom.broker_loop)
         h1.start()
         time.sleep(3)
-        initialization()
-        h2 = Thread(target=check_mine_request)
-        h3 = Thread(target=check_read_request)
+        block_chain = Util.initialization()
+        h2 = Thread(target=Util.check_mine_request)
+        h3 = Thread(target=Util.check_read_request)
         h2.start()
         h3.start()
 
@@ -498,11 +511,5 @@ if __name__ == "__main__":
     block_winners = []
     client = mqtt.Client()
     clean = []
-    worker_id = ip_address()
+    worker_id = Util.ip_address()
     main()
-
-# b = BlockChain()
-# b.add_block('emeka')
-# b.add_block('james')
-# print(b.read_block(nonce=1))
-# print(b.read_all())
