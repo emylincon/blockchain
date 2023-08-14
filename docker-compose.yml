@@ -6,6 +6,8 @@ services:
     build:
       context: ./broker
       dockerfile: Dockerfile
+    deploy:
+      replicas: 1
     ports:
       - 1883:1883
     healthcheck:
@@ -16,6 +18,8 @@ services:
 
   web-api:
     build: .
+    deploy:
+      replicas: 1
     command: distributed/api.py
     environment:
       - BROKER_IP=broker
@@ -34,8 +38,10 @@ services:
       retries: 3
       start_period: 40s
 
-  worker1:
+  worker:
     build: .
+    deploy:
+      replicas: 3
     command: distributed/worker.py
     environment:
       - BROKER_IP=broker
@@ -46,33 +52,12 @@ services:
       web-api:
         condition: service_healthy
 
-  worker2:
-    build: .
-    command: distributed/worker.py
-    environment:
-      - BROKER_IP=broker
-      - BROKER_PORT=1883
-    depends_on:
-      broker:
-        condition: service_healthy
-      web-api:
-        condition: service_healthy
-
-  worker3:
-    build: .
-    command: distributed/worker.py
-    environment:
-      - BROKER_IP=broker
-      - BROKER_PORT=1883
-    depends_on:
-      broker:
-        condition: service_healthy
-      web-api:
-        condition: service_healthy
   web:
     build:
       context: ./web/
       dockerfile: Dockerfile
+    deploy:
+      replicas: 1
     environment:
       - BLOCKCHAIN_API=http://web-api:8080
     depends_on:
